@@ -1,0 +1,147 @@
+# Esteira reutilizável (workflow_call).
+#
+# PR:           job "verificar": ficha + verificação do bloco + testes do projeto.
+# push na main: job "publicar": o mesmo, depois imagem no GHCR (tag do commit,
+#               identificada pelo digest) e deployment "producao" com o payload
+#               do contrato (docs/contrato-deployment.md).
+# Só um dos dois jobs roda em cada execução. Ficha recusada ou teste que falha
+# param antes da imagem e antes do deployment.
+#
+# Ações de terceiros e as ações deste repositório fixadas pelo commit.
+name: esteira-reutilizavel
+
+on:
+  workflow_call:
+    inputs:
+      publicar:
+        description: "true no push na main (imagem e deployment); false no PR (só ficha e testes)"
+        type: boolean
+        required: true
+    outputs:
+      digest:
+        description: digest da imagem publicada
+        value: ${{ jobs.publicar.outputs.digest }}
+      deployment:
+        description: id do deployment registrado
+        value: ${{ jobs.publicar.outputs.deployment }}
+
+jobs:
+  verificar:
+    if: ${{ !inputs.publicar }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: v3a-ag/.github/acoes/verificar@61abb368621cc01f3659e50f4bf7735b10e10c56
+
+  publicar:
+    if: ${{ inputs.publicar }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      packages: write
+      deployments: write
+    concurrency:
+      group: esteira-producao-${{ github.repository }}
+      cancel-in-progress: false
+    outputs:
+      digest: ${{ steps.imagem.outputs.digest }}
+      deployment: ${{ steps.deployment.outputs.id }}
+    steps:
+      - name: só a main publica
+        if: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          echo "::error title=esteira::publicar só a partir da main (veio ${GITHUB_REF})"
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: verificar
+        uses: v3a-ag/.github/acoes/verificar@61abb368621cc01f3659e50f4bf7735b10e10c56
+
+      - uses: v3a-ag/.github/acoes/preparar-imagem@61abb368621cc01f3659e50f4bf7735b10e10c56
+        with:
+          bloco: ${{ steps.verificar.outputs.bloco }}
+          destino: ${{ runner.temp }}/contexto
+
+      - id: nome
+        name: nome da imagem
+        env:
+          CHAVE: ${{ steps.verificar.outputs.chave }}
+          DONO: ${{ github.repository_owner }}
+        run: echo "imagem=ghcr.io/${DONO,,}/${CHAVE,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: login no GHCR
+        env:
+          TOKEN: ${{ github.token }}
+        run: echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - id: imagem
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ runner.temp }}/contexto
+          file: ${{ runner.temp }}/contexto/Dockerfile
+          push: true
+          provenance: false
+          sbom: false
+          tags: ${{ steps.nome.outputs.imagem }}:${{ github.sha }}
+          build-args: |
+            HEALTHCHECK=${{ steps.verificar.outputs.healthcheck }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=${{ steps.verificar.outputs.chave }}
+          cache-from: type=gha,scope=${{ steps.verificar.outputs.chave }}
+          cache-to: type=gha,mode=min,scope=${{ steps.verificar.outputs.chave }}
+
+      - id: deployment
+        name: registrar o deployment producao
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHAVE: ${{ steps.verificar.outputs.chave }}
+          IMAGEM: ${{ steps.nome.outputs.imagem }}
+          DIGEST: ${{ steps.imagem.outputs.digest }}
+          FICHA_SHA256: ${{ steps.verificar.outputs.ficha_sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::digest inválido: $DIGEST"; exit 1; }
+          payload="$(jq -n \
+            --arg tipo deploy --arg chave "$CHAVE" --arg commit "$GITHUB_SHA" \
+            --arg imagem "$IMAGEM" --arg digest "$DIGEST" --arg ficha "$FICHA_SHA256" \
+            --arg autor "${GITHUB_TRIGGERING_ACTOR:-$GITHUB_ACTOR}" --arg motivo "push na main" \
+            --argjson execucao "$GITHUB_RUN_ID" --argjson tentativa "$GITHUB_RUN_ATTEMPT" \
+            '{contrato: 1, tipo: $tipo, chave: $chave, commit: $commit, imagem: $imagem,
+              digest: $digest, ficha_sha256: $ficha, autor: $autor, motivo: $motivo,
+              execucao: $execucao, tentativa: $tentativa, origem: null}')"
+          jq -n --arg ref "$GITHUB_SHA" --argjson payload "$payload" \
+            --arg descricao "deploy ${GITHUB_SHA:0:7} ${DIGEST:7:12}" \
+            '{ref: $ref, environment: "producao", task: "deploy", auto_merge: false,
+              required_contexts: [], production_environment: true,
+              transient_environment: false, description: $descricao, payload: $payload}' \
+            > "$RUNNER_TEMP/deployment.json"
+          id="$(gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments" --input "$RUNNER_TEMP/deployment.json" --jq '.id')"
+          [[ "$id" =~ ^[0-9]+$ ]] || { echo "::error::deployment não criado: $id"; exit 1; }
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Pedido de publicação registrado"
+            echo "| campo | valor |"
+            echo "| --- | --- |"
+            echo "| deployment | $id |"
+            echo "| chave | $CHAVE |"
+            echo "| commit | \`$GITHUB_SHA\` |"
+            echo "| imagem | \`$IMAGEM:$GITHUB_SHA\` |"
+            echo "| digest | \`$DIGEST\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: logout do GHCR
+        if: ${{ always() }}
+        run: docker logout ghcr.io
