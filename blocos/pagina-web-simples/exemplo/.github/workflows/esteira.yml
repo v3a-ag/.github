@@ -1,0 +1,17 @@
+# Chamador da esteira. Troque <SHA> pelo commit da versão da esteira em uso
+# (o agente de deploy confere que o run usou a versão fixada).
+name: esteira
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+jobs:
+  esteira:
+    uses: v3a-ag/.github/.github/workflows/esteira-reutilizavel.yml@<SHA>
+    with:
+      publicar: ${{ github.event_name == 'push' }}
