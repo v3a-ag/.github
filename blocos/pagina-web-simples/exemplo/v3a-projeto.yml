@@ -1,0 +1,13 @@
+# Ficha do projeto: o que o app precisa (esquema em esquema/v3a-projeto.schema.json).
+# Não entra aqui: rede, sub-rede, alias, porta, mount, label nem privilégio.
+versao: 1
+chave: N1-exemplo-pagina          # igual ao nome do repositório
+bloco: pagina_web_simples
+healthcheck: /
+exposicao: interface_humana
+dependencias_privadas: []
+servicos_compartilhados: []
+conversa_com_n8n: false
+apis_externas: []
+dados: {classificacao: interno, persistencia: nenhuma}
+recursos: {memoria: 64m, cpu: 0.25}

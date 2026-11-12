@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "v3a-projeto.schema.json",
+  "title": "Ficha do projeto (v3a-projeto.yml), versão 1",
+  "description": "Diz o que o app precisa. Não diz como o servidor faz: rede, sub-rede, alias, porta, mount, label e privilégio são do modelo do bloco e nunca entram na ficha.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["versao", "chave", "bloco"],
+  "properties": {
+    "versao": {
+      "description": "Versão do formato da ficha.",
+      "const": 1
+    },
+    "chave": {
+      "description": "CHAVE do projeto, igual ao nome do repositório.",
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]{1,4}-[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 40
+    },
+    "bloco": {
+      "description": "Bloco do catálogo que a esteira usa para testar e montar a imagem.",
+      "enum": ["pagina_web_simples"]
+    },
+    "healthcheck": {
+      "description": "Caminho HTTP que responde 200 quando o app está saudável.",
+      "type": "string",
+      "pattern": "^/[A-Za-z0-9._~/-]{0,100}$",
+      "default": "/"
+    },
+    "exposicao": {
+      "description": "Quem acessa o app: pessoas pelo login Google, ou máquinas (bloqueado até a P-18).",
+      "enum": ["interface_humana", "maquina"],
+      "default": "interface_humana"
+    },
+    "dependencias_privadas": {
+      "description": "Serviços só do app, na rede interna dele.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["postgres", "supabase"]},
+      "default": []
+    },
+    "servicos_compartilhados": {
+      "description": "Serviços compartilhados que o app pode chamar.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["stirling-pdf", "crawl4ai", "searxng"]},
+      "default": []
+    },
+    "conversa_com_n8n": {
+      "description": "O app conversa com os workers do n8n (não vale para quem só chama um webhook público).",
+      "type": "boolean",
+      "default": false
+    },
+    "apis_externas": {
+      "description": "APIs de fora que o app usa; a credencial fica por ambiente, nunca na ficha.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["openai", "anthropic", "gemini", "cnpja"]},
+      "default": []
+    },
+    "dados": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classificacao": {"enum": ["publico", "interno", "sensivel"], "default": "interno"},
+        "persistencia": {"enum": ["nenhuma", "volume"], "default": "nenhuma"}
+      }
+    },
+    "recursos": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "memoria": {
+          "description": "Limite de memória em megabytes, de 32m a 1024m.",
+          "type": "string",
+          "pattern": "^(3[2-9]|[4-9][0-9]|[1-9][0-9]{2}|10[01][0-9]|102[0-4])m$",
+          "default": "128m"
+        },
+        "cpu": {
+          "description": "Limite de CPU, de 0.05 a 2.",
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 2,
+          "default": 0.25
+        }
+      }
+    }
+  }
+}

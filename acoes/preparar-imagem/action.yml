@@ -1,0 +1,24 @@
+name: preparar-imagem
+description: >-
+  Monta o contexto de build com o Dockerfile padrão do bloco, a ficha e os
+  arquivos do app. O Dockerfile do repositório, se existir, não é usado.
+inputs:
+  bloco:
+    description: bloco da ficha
+    required: true
+  raiz:
+    description: raiz do repositório já baixado
+    default: .
+  destino:
+    description: pasta do contexto de build
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        BLOCO: ${{ inputs.bloco }}
+        RAIZ: ${{ inputs.raiz }}
+        DESTINO: ${{ inputs.destino }}
+        SCRIPTS: ${{ github.action_path }}/../../scripts
+      run: bash "$SCRIPTS/preparar_contexto.sh" "$BLOCO" "$RAIZ" "$DESTINO"

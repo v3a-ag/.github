@@ -1,0 +1,62 @@
+name: verificar
+description: >-
+  Valida a ficha v3a-projeto.yml contra o esquema, faz a verificação do bloco
+  e roda os testes do projeto (testes/*.sh). Qualquer falha para a esteira.
+inputs:
+  raiz:
+    description: raiz do repositório já baixado
+    default: .
+outputs:
+  chave:
+    description: CHAVE da ficha
+    value: ${{ steps.ficha.outputs.chave }}
+  bloco:
+    description: bloco da ficha
+    value: ${{ steps.ficha.outputs.bloco }}
+  healthcheck:
+    description: caminho do healthcheck (padrão /)
+    value: ${{ steps.ficha.outputs.healthcheck }}
+  ficha_sha256:
+    description: sha256 do arquivo v3a-projeto.yml
+    value: ${{ steps.ficha.outputs.ficha_sha256 }}
+runs:
+  using: composite
+  steps:
+    - id: ficha
+      name: validar a ficha
+      shell: bash
+      env:
+        RAIZ: ${{ inputs.raiz }}
+        SCRIPTS: ${{ github.action_path }}/../../scripts
+      run: |
+        set -euo pipefail
+        repositorio="${GITHUB_REPOSITORY#*/}"
+        ficha="$RAIZ/v3a-projeto.yml"
+        json="$RUNNER_TEMP/v3a-ficha.json"
+        rm -f "$json"
+        if [ -f "$ficha" ]; then
+          if ! yq -o=json '.' "$ficha" > "$json"; then
+            echo "::error title=ficha v3a-projeto.yml::a ficha não é YAML válido"
+            exit 1
+          fi
+        fi
+        python3 "$SCRIPTS/validar_ficha.py" --repositorio "$repositorio" "$json"
+        {
+          echo "chave=$(jq -r '.chave' "$json")"
+          echo "bloco=$(jq -r '.bloco' "$json")"
+          echo "healthcheck=$(jq -r '.healthcheck // "/"' "$json")"
+          echo "ficha_sha256=$(sha256sum "$ficha" | cut -d' ' -f1)"
+        } >> "$GITHUB_OUTPUT"
+    - name: verificar o bloco
+      shell: bash
+      env:
+        RAIZ: ${{ inputs.raiz }}
+        BLOCO: ${{ steps.ficha.outputs.bloco }}
+        SCRIPTS: ${{ github.action_path }}/../../scripts
+      run: bash "$SCRIPTS/verificar_bloco.sh" "$BLOCO" "$RAIZ"
+    - name: testes do projeto
+      shell: bash
+      env:
+        RAIZ: ${{ inputs.raiz }}
+        SCRIPTS: ${{ github.action_path }}/../../scripts
+      run: bash "$SCRIPTS/rodar_testes.sh" "$RAIZ"

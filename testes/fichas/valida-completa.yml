@@ -1,0 +1,11 @@
+versao: 1
+chave: N1-exemplo-pagina
+bloco: pagina_web_simples
+healthcheck: /
+exposicao: interface_humana
+dependencias_privadas: []
+servicos_compartilhados: []
+conversa_com_n8n: false
+apis_externas: []
+dados: {classificacao: interno, persistencia: nenhuma}
+recursos: {memoria: 64m, cpu: 0.25}

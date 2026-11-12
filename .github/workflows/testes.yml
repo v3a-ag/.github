@@ -1,0 +1,29 @@
+name: testes
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  testes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: testes do validador e dos scripts
+        run: python3 -m unittest discover -s testes -v
+      - name: fichas YAML convertidas pelo yq
+        run: bash testes/rodar_fichas_yaml.sh
+      - name: ficha do exemplo do bloco
+        run: |
+          yq -o=json '.' blocos/pagina-web-simples/exemplo/v3a-projeto.yml > "$RUNNER_TEMP/f.json"
+          python3 scripts/validar_ficha.py --repositorio N1-exemplo-pagina "$RUNNER_TEMP/f.json"
+          bash scripts/verificar_bloco.sh pagina_web_simples blocos/pagina-web-simples/exemplo
+          bash scripts/rodar_testes.sh blocos/pagina-web-simples/exemplo
+      - name: actionlint
+        run: |
+          docker run --rm -v "$PWD:/repo" --workdir /repo \
+            rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color

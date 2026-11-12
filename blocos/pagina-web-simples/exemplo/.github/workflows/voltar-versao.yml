@@ -1,0 +1,23 @@
+# Voltar versão: registra um deployment novo do tipo rollback com o digest de
+# uma versão já publicada, sem rebuild. Troque <SHA> como no esteira.yml.
+name: voltar-versao
+on:
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: "digest da versão (sha256:...), visto em Deployments ou no resumo do run"
+        required: true
+        type: string
+      motivo:
+        description: "por que voltar"
+        required: true
+        type: string
+permissions:
+  packages: read
+  deployments: write
+jobs:
+  voltar:
+    uses: v3a-ag/.github/.github/workflows/voltar-versao-reutilizavel.yml@<SHA>
+    with:
+      digest: ${{ inputs.digest }}
+      motivo: ${{ inputs.motivo }}

@@ -1,0 +1,134 @@
+# Voltar versão (workflow_call).
+#
+# Registra um deployment NOVO do tipo rollback, no ambiente "producao", com o
+# digest de uma versão já pedida antes neste repositório. Sem rebuild: a imagem
+# precisa existir no GHCR. O agente de deploy publica como qualquer pedido e
+# segue o pedido mais recente (docs/contrato-deployment.md).
+name: voltar-versao-reutilizavel
+
+on:
+  workflow_call:
+    inputs:
+      digest:
+        description: "digest da versão de volta (sha256:...)"
+        type: string
+        required: true
+      motivo:
+        description: "por que voltar (uma linha, até 200 caracteres)"
+        type: string
+        required: true
+    outputs:
+      deployment:
+        description: id do deployment de rollback
+        value: ${{ jobs.voltar.outputs.deployment }}
+
+jobs:
+  voltar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      packages: read
+      deployments: write
+    concurrency:
+      group: esteira-producao-${{ github.repository }}
+      cancel-in-progress: false
+    outputs:
+      deployment: ${{ steps.deployment.outputs.id }}
+    steps:
+      - name: conferir o pedido
+        env:
+          DIGEST: ${{ inputs.digest }}
+          MOTIVO: ${{ inputs.motivo }}
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = "refs/heads/main" ] || { echo "::error title=voltar versão::dispare a partir da main (veio $GITHUB_REF)"; exit 1; }
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error title=voltar versão::digest precisa ser sha256: seguido de 64 hexadecimais"; exit 1; }
+          motivo_limpo="$(printf '%s' "$MOTIVO" | tr -d '\r' | tr '\n' ' ' | sed 's/^ *//; s/ *$//')"
+          [ -n "$motivo_limpo" ] || { echo "::error title=voltar versão::o motivo é obrigatório"; exit 1; }
+          [ "${#motivo_limpo}" -le 200 ] || { echo "::error title=voltar versão::motivo passa de 200 caracteres"; exit 1; }
+
+      - id: origem
+        name: achar a versão já pedida
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/deployments?environment=producao&per_page=100" \
+            --jq '.[] | select((.payload | type) == "object" and .payload.contrato == 1 and .payload.digest == env.DIGEST) | {id, sha, payload}' \
+            > "$RUNNER_TEMP/origens.jsonl"
+          if [ ! -s "$RUNNER_TEMP/origens.jsonl" ]; then
+            echo "::error title=voltar versão::nenhum pedido anterior com o digest $DIGEST neste repositório; só se volta para uma versão já pedida"
+            exit 1
+          fi
+          jq -s 'map(select(.payload.tipo == "deploy")) | if length == 0 then error("sem pedido deploy") else min_by(.id) end' \
+            "$RUNNER_TEMP/origens.jsonl" > "$RUNNER_TEMP/origem.json"
+          repositorio="${GITHUB_REPOSITORY#*/}"
+          esperada="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${repositorio,,}"
+          chave="$(jq -r '.payload.chave' "$RUNNER_TEMP/origem.json")"
+          imagem="$(jq -r '.payload.imagem' "$RUNNER_TEMP/origem.json")"
+          commit="$(jq -r '.payload.commit' "$RUNNER_TEMP/origem.json")"
+          [ "$chave" = "$repositorio" ] || { echo "::error::chave do pedido de origem ($chave) diferente do repositório"; exit 1; }
+          [ "$imagem" = "$esperada" ] || { echo "::error::imagem do pedido de origem ($imagem) diferente de $esperada"; exit 1; }
+          [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::commit do pedido de origem inválido"; exit 1; }
+          {
+            echo "id=$(jq -r '.id' "$RUNNER_TEMP/origem.json")"
+            echo "chave=$chave"
+            echo "imagem=$imagem"
+            echo "commit=$commit"
+            echo "ficha_sha256=$(jq -r '.payload.ficha_sha256' "$RUNNER_TEMP/origem.json")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: conferir a imagem no GHCR
+        env:
+          TOKEN: ${{ github.token }}
+          IMAGEM: ${{ steps.origem.outputs.imagem }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          set -euo pipefail
+          echo "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker buildx imagetools inspect "$IMAGEM@$DIGEST" > /dev/null \
+            || { echo "::error title=voltar versão::imagem $IMAGEM@$DIGEST não existe mais no GHCR"; docker logout ghcr.io; exit 1; }
+          docker logout ghcr.io
+
+      - id: deployment
+        name: registrar o deployment de rollback
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHAVE: ${{ steps.origem.outputs.chave }}
+          IMAGEM: ${{ steps.origem.outputs.imagem }}
+          COMMIT: ${{ steps.origem.outputs.commit }}
+          ORIGEM: ${{ steps.origem.outputs.id }}
+          FICHA_SHA256: ${{ steps.origem.outputs.ficha_sha256 }}
+          DIGEST: ${{ inputs.digest }}
+          MOTIVO: ${{ inputs.motivo }}
+        run: |
+          set -euo pipefail
+          motivo="$(printf '%s' "$MOTIVO" | tr -d '\r' | tr '\n' ' ' | sed 's/^ *//; s/ *$//')"
+          payload="$(jq -n \
+            --arg tipo rollback --arg chave "$CHAVE" --arg commit "$COMMIT" \
+            --arg imagem "$IMAGEM" --arg digest "$DIGEST" --arg ficha "$FICHA_SHA256" \
+            --arg autor "${GITHUB_TRIGGERING_ACTOR:-$GITHUB_ACTOR}" --arg motivo "$motivo" \
+            --argjson execucao "$GITHUB_RUN_ID" --argjson tentativa "$GITHUB_RUN_ATTEMPT" \
+            --argjson origem "$ORIGEM" \
+            '{contrato: 1, tipo: $tipo, chave: $chave, commit: $commit, imagem: $imagem,
+              digest: $digest, ficha_sha256: $ficha, autor: $autor, motivo: $motivo,
+              execucao: $execucao, tentativa: $tentativa, origem: $origem}')"
+          jq -n --arg ref "$COMMIT" --argjson payload "$payload" \
+            --arg descricao "rollback ${COMMIT:0:7} ${DIGEST:7:12}" \
+            '{ref: $ref, environment: "producao", task: "deploy", auto_merge: false,
+              required_contexts: [], production_environment: true,
+              transient_environment: false, description: $descricao, payload: $payload}' \
+            > "$RUNNER_TEMP/deployment.json"
+          id="$(gh api -X POST "repos/${GITHUB_REPOSITORY}/deployments" --input "$RUNNER_TEMP/deployment.json" --jq '.id')"
+          [[ "$id" =~ ^[0-9]+$ ]] || { echo "::error::deployment não criado: $id"; exit 1; }
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Pedido de volta de versão registrado"
+            echo "| campo | valor |"
+            echo "| --- | --- |"
+            echo "| deployment | $id |"
+            echo "| volta para | pedido $ORIGEM, commit \`$COMMIT\` |"
+            echo "| digest | \`$DIGEST\` |"
+            echo "| motivo | $motivo |"
+          } >> "$GITHUB_STEP_SUMMARY"
