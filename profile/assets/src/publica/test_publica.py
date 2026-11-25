@@ -5,7 +5,8 @@ from pathlib import Path
 
 from publica import pecas
 
-NOMES = ["hero", "hero-celular", "secao-01", "secao-02", "secao-03", "secao-04", "metodo", "fechamento"]
+NOMES = list(pecas.PECAS) + list(pecas.COPY["secoes"])
+COM_LOOP = {"esteira", "esteira-celular", "anatomia", "anatomia-celular", "arquitetura", "arquitetura-celular"}
 
 
 def _textos(obj):
@@ -37,15 +38,18 @@ class TestPublica(unittest.TestCase):
         esperado = {f"{n}-{t}.svg" for n in NOMES for t in ("claro", "escuro")}
         self.assertEqual({p.name for p in self.svgs}, esperado)
 
+    def test_todo_diagrama_tem_versao_celular(self):
+        for nome in ("hero", "esteira", "anatomia", "arquitetura", "principios", "stack", "fechamento"):
+            self.assertIn(f"{nome}-celular", pecas.PECAS)
+
     def test_publica_sem_numeros_de_escala(self):
-        # numeração de seção/passo ("01.") é estilo do manual; contagem não
         for t in _textos(pecas.COPY):
-            limpo = re.sub(r"^0\d\.?$", "", t.replace("V3A", ""))
+            limpo = re.sub(r"^0\d\.?$|n8n", "", t.replace("V3A", ""), flags=re.I)  # numeração e nome de ferramenta
             self.assertIsNone(re.search(r"\d", limpo), t)
 
     def test_claro_sem_moldura_escuro_em_bloco(self):
-        for nome in ("hero", "hero-celular", "fechamento"):
-            self.assertNotIn("<rect", self._svg(nome, "claro"), nome)
+        for nome in ("hero", "hero-celular", "fechamento", "fechamento-celular"):
+            self.assertNotIn('fill="#636466"', self._svg(nome, "claro"), nome)
             self.assertIn('fill="#636466"', self._svg(nome, "escuro"), nome)
 
     def test_logo_e_grafismo_na_mesma_cor(self):
@@ -54,18 +58,29 @@ class TestPublica(unittest.TestCase):
             self.assertIn(f'<g class="logo" fill="{cor}">', s)
             self.assertIn(f'<g class="graf" fill="{cor}">', s)
 
-    def test_so_hero_tem_entrada_e_so_metodo_tem_loop(self):
+    def test_entrada_so_no_hero_e_loops_nos_diagramas(self):
         for nome in NOMES:
             s = self._svg(nome)
-            tem_entrada = "@keyframes sobe" in s
-            self.assertEqual(tem_entrada, nome.startswith("hero"), nome)
-            self.assertEqual(s.count("infinite"), 1 if nome == "metodo" else 0, nome)
+            self.assertEqual("@keyframes sobe" in s, nome.startswith("hero"), nome)
+            self.assertEqual("infinite" in s, nome in COM_LOOP, nome)
+
+    def test_ciclo_mostra_primeiro_exemplo_sem_animacao(self):
+        s = self._svg("anatomia")
+        self.assertIn(".ex1{animation-delay:4s;opacity:0}", s)
+        self.assertIn(".ex2{animation-delay:8s;opacity:0}", s)
+
+    def test_nada_cortado_na_borda(self):
+        for nome in ("anatomia",):
+            s = self._svg(nome)
+            for x, w in re.findall(r'<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="168"', s):
+                self.assertLessEqual(float(x) + float(w) + 1.5, 830, nome)
 
     def test_animado_nao_tem_transform_proprio(self):
         for p in self.svgs:
             s = p.read_text()
             self.assertNotRegex(s, r'<g class="[^"]*" transform=', p.name)
             self.assertNotRegex(s, r'<g transform="[^"]*" class=', p.name)
+            self.assertNotRegex(s, r'<(rect|circle|path) class="[^"]*"[^>]* transform=', p.name)
 
     def test_sem_text_nem_externo(self):
         for p in self.svgs:
