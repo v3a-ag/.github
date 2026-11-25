@@ -47,10 +47,12 @@ class TestPublica(unittest.TestCase):
             limpo = re.sub(r"^0\d\.?$|n8n", "", t.replace("V3A", ""), flags=re.I)  # numeração e nome de ferramenta
             self.assertIsNone(re.search(r"\d", limpo), t)
 
-    def test_claro_sem_moldura_escuro_em_bloco(self):
-        for nome in ("hero", "hero-celular", "fechamento", "fechamento-celular"):
-            self.assertNotIn('fill="#636466"', self._svg(nome, "claro"), nome)
-            self.assertIn('fill="#636466"', self._svg(nome, "escuro"), nome)
+    def test_claro_branco_sem_contorno_escuro_cinza(self):
+        for nome in NOMES:
+            claro, escuro = self._svg(nome, "claro"), self._svg(nome, "escuro")
+            # cor do fundo checada em gerador.test_gerador.TestLegivelEmQualquerFundo; aqui: sem contorno
+            self.assertNotRegex(claro, r'</style>(<g[^>]*>)?<rect [^>]*stroke', nome)
+            self.assertIn('fill="#636466"', escuro, nome)
 
     def test_logo_e_grafismo_na_mesma_cor(self):
         for tema, cor in (("claro", "#FFCB05"), ("escuro", "#FFFFFF")):

@@ -9,12 +9,12 @@ from functools import lru_cache
 from .marca import CORES, RECURSOS
 
 TEMA = {
-    "claro": {"bloco": None, "logo": CORES["amarelo"], "texto": CORES["preto"],
+    "claro": {"bloco": CORES["branco"], "logo": CORES["amarelo"], "texto": CORES["preto"],
               "suave": CORES["cinza_escuro"], "destaque": CORES["amarelo"], "linha": CORES["cinza_claro"],
               "sobre_destaque": CORES["preto"], "pagina": "#FFFFFF"},
     "escuro": {"bloco": CORES["cinza_escuro"], "logo": CORES["branco"], "texto": CORES["branco"],
                "suave": CORES["nuvem"], "destaque": CORES["amarelo"], "linha": CORES["cinza_claro"],
-               "sobre_destaque": CORES["preto"], "pagina": "#0D1117"},
+               "sobre_destaque": CORES["preto"], "pagina": CORES["cinza_escuro"]},
 }
 
 # Grafismo: recortes dos traços do monograma (proporções de "Elementos Gráficos-01"),
@@ -63,14 +63,22 @@ def monograma(x: float, y: float, altura: float, cor: str, classe: str = "") -> 
 
 
 def fundo(largura: int, altura: int, tema: str, raio: int = 12) -> str:
-    """Claro: nada (o fundo branco do GitHub é o fundo). Escuro: bloco cinza escuro."""
-    cor = TEMA[tema]["bloco"]
-    return f'<rect width="{largura}" height="{altura}" rx="{raio}" fill="{cor}"/>' if cor else ""
+    """Toda peça traz o próprio fundo: claro = branco, escuro = cinza escuro #636466.
+
+    O <picture> do GitHub escolhe a versão pelo tema do SISTEMA, não pelo do GitHub; sem fundo próprio,
+    a versão escura cai em página branca (e vice-versa) e o texto some (bug de 25/11/2026).
+    """
+    return f'<rect width="{largura}" height="{altura}" rx="{raio}" fill="{TEMA[tema]["bloco"]}"/>'
 
 
-def svg_aberto(largura: int, altura: int, titulo: str, css: str, corpo: str) -> str:
+def svg_aberto(largura: int, altura: int, titulo: str, css: str, corpo: str,
+               tema: str = None, margem: int = 0) -> str:
+    """Com `tema`, embrulha o corpo num bloco de fundo próprio com `margem` interna."""
     from html import escape
     from .svg import SEM_MOVIMENTO
+    if tema:
+        largura, altura = largura + 2 * margem, altura + 2 * margem
+        corpo = fundo(largura, altura, tema) + f'<g transform="translate({margem} {margem})">{corpo}</g>'
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {largura} {altura}" '
             f'width="{largura}" height="{altura}" role="img"><title>{escape(titulo)}</title>'
             f'<style>{css}{SEM_MOVIMENTO}</style>{corpo}</svg>')

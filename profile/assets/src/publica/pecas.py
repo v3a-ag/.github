@@ -162,7 +162,7 @@ def secao(chave):
         w_num = tx.largura(num, tam, 900, 0)
         corpo = (svg.linha(num, 2, 44, tam, t["destaque"], 900, 0)
                  + svg.linha(titulo, w_num + 14, 44, tam, t["texto"], 800, 0.005))
-        return idt.svg_aberto(L, A, f"{num} {titulo.capitalize()}", "", corpo)
+        return idt.svg_aberto(L, A, f"{num} {titulo.capitalize()}", "", corpo, tema, 16)
     return gerar
 
 
@@ -186,7 +186,7 @@ def esteira(tema):
     p.append(svg.linha(COPY["esteira_rodape"], L / 2, A - 14, 13.5, t["texto"], 800, 0.04, ancora="meio"))
     css = _passo_css("anel", "X", passo, len(est), 11)
     return idt.svg_aberto(L, A, "Onde a automação entra: briefing e abertura, planejamento, pré-produção, "
-                                "produção e fechamento. O trabalho humano permanece no centro.", css, "".join(p))
+                                "produção e fechamento. O trabalho humano permanece no centro.", css, "".join(p), tema, 24)
 
 
 def esteira_celular(tema):
@@ -206,7 +206,7 @@ def esteira_celular(tema):
         p.append(svg.linha(l, 24, A - 40 + j * 20, 14, t["texto"], 800, 0.03))
     css = _passo_css("anel", "Y", passo, len(est), 11)
     return idt.svg_aberto(L, A, "Onde a automação entra: briefing e abertura, planejamento, pré-produção, "
-                                "produção e fechamento. O trabalho humano permanece no centro.", css, "".join(p))
+                                "produção e fechamento. O trabalho humano permanece no centro.", css, "".join(p), tema, 16)
 
 
 # ---------- 02. anatomia ----------
@@ -253,7 +253,7 @@ def anatomia(tema):
             for j, l in enumerate(svg.quebrar(rot, 13.5, larg - 24, 700, 0.01)):
                 p.append(svg.linha(l, cx, y_card + 124 + j * 18.5, 13.5, t["texto"], 700, 0.01, ancora="meio"))
     return idt.svg_aberto(L, A, "Anatomia de uma automação: entrada, processamento, saída e validação humana.",
-                          CICLO, "".join(p))
+                          CICLO, "".join(p), tema, 24)
 
 
 def anatomia_celular(tema):
@@ -277,7 +277,7 @@ def anatomia_celular(tema):
             p.append(_ic(ic, t, 20, y + 46, 40))
             p.append(svg.linha(rot, 76, y + 74, 15, t["texto"], 700, 0.01))
     return idt.svg_aberto(L, A, "Anatomia de uma automação: entrada, processamento, saída e validação humana.",
-                          CICLO, "".join(p))
+                          CICLO, "".join(p), tema, 16)
 
 
 # ---------- 03. do pedido à produção ----------
@@ -302,7 +302,7 @@ def arquitetura(tema):
            f"90%{{opacity:1}}100%{{transform:translateX({dist:.0f}px);opacity:0}}}}"
            ".pacote{animation:pacote 5s cubic-bezier(.45,0,.55,1) infinite}")
     return idt.svg_aberto(L, A, "Do pedido à produção: pedido, código, esteira, produção e versão. "
-                                "Tudo versionado; nada publica sem aprovação.", css, "".join(p))
+                                "Tudo versionado; nada publica sem aprovação.", css, "".join(p), tema, 24)
 
 
 def arquitetura_celular(tema):
@@ -326,7 +326,7 @@ def arquitetura_celular(tema):
            f"90%{{opacity:1}}100%{{transform:translateY({dist:.0f}px);opacity:0}}}}"
            ".pacote{animation:pacote 5s cubic-bezier(.45,0,.55,1) infinite}")
     return idt.svg_aberto(L, A, "Do pedido à produção: pedido, código, esteira, produção e versão. "
-                                "Tudo versionado; nada publica sem aprovação.", css, "".join(p))
+                                "Tudo versionado; nada publica sem aprovação.", css, "".join(p), tema, 16)
 
 
 # ---------- 04. princípios e 05. ferramentas ----------
@@ -354,14 +354,14 @@ def principios(tema):
     itens = COPY["principios"]
     corpo = _blocos(itens, t, 830, 4, 830 / 4, 0, 52, 17, _principio)
     return idt.svg_aberto(830, 148, "Princípios: gente no centro, dado não achismo, versão e backup, passos curtos.",
-                          "", corpo)
+                          "", corpo, tema, 24)
 
 
 def principios_celular(tema):
     t = idt.TEMA[tema]
     corpo = _blocos(COPY["principios"], t, 360, 2, 180, 150, 46, 17, _principio)
     return idt.svg_aberto(360, 290, "Princípios: gente no centro, dado não achismo, versão e backup, passos curtos.",
-                          "", corpo)
+                          "", corpo, tema, 16)
 
 
 def _ferramenta(it, t, cx, y, tam_ic, tam_txt):
@@ -377,14 +377,14 @@ def stack(tema):
     t = idt.TEMA[tema]
     corpo = _blocos(COPY["stack"], t, 830, 6, 830 / 6, 0, 36, 12, _ferramenta)
     return idt.svg_aberto(830, 104, "Ferramentas: n8n, Python, Supabase, Google Workspace, GitHub Actions e Claude.",
-                          "", corpo)
+                          "", corpo, tema, 24)
 
 
 def stack_celular(tema):
     t = idt.TEMA[tema]
     corpo = _blocos(COPY["stack"], t, 360, 3, 120, 100, 34, 12, _ferramenta)
     return idt.svg_aberto(360, 196, "Ferramentas: n8n, Python, Supabase, Google Workspace, GitHub Actions e Claude.",
-                          "", corpo)
+                          "", corpo, tema, 16)
 
 
 PECAS = {
