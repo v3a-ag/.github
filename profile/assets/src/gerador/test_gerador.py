@@ -73,6 +73,30 @@ class TestQuebra(unittest.TestCase):
         self.assertLessEqual(texto.largura("Relatório pronto, no padrão", t, 800), 300)
 
 
+class TestIdentidade(unittest.TestCase):
+    def test_grafismo_quatro_recortes_na_cor(self):
+        from gerador import identidade as idt
+        g = idt.grafismo(0, 0, 224, "#FFCB05", "graf")
+        self.assertEqual(g.count("<polygon"), 4)
+        self.assertIn('fill="#FFCB05"', g)
+        ys = [float(v.split(",")[1]) for v in re.findall(r"[\d.]+,[\d.]+", g)]
+        self.assertAlmostEqual(max(ys), 224 / 11.2, places=1)
+
+    def test_monograma_uma_cor_e_classe_no_g_interno(self):
+        from gerador import identidade as idt
+        m = idt.monograma(10, 10, 48, "#FFFFFF", "logo")
+        self.assertEqual(set(re.findall(r'fill="([^"]+)"', m)), {"#FFFFFF"})
+        self.assertNotRegex(m, r'<g transform="[^"]*" class=')
+        self.assertIn('<g class="logo"', m)
+
+    def test_fundo_branco_sem_contorno_e_escuro_cinza(self):
+        from gerador import identidade as idt
+        claro = idt.fundo(100, 50, "claro")
+        self.assertIn('fill="#FFFFFF"', claro)
+        self.assertNotIn("stroke", claro)
+        self.assertIn('fill="#636466"', idt.fundo(100, 50, "escuro"))
+
+
 class TestMarca(unittest.TestCase):
     def test_temas_tem_chaves(self):
         for tema in ("claro", "escuro"):
@@ -98,3 +122,24 @@ class TestMarca(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestLegivelEmQualquerFundo(unittest.TestCase):
+    """Bug de 25/11: <picture> segue o tema do sistema, não o do GitHub; a peça escura caiu em página
+    branca e o texto branco sumiu. Toda peça precisa trazer o próprio fundo (claro: branco; escuro: cinza)."""
+
+    def _todas(self):
+        import tempfile
+        from publica import pecas as pub
+        from membros import pecas as mem
+        t = tempfile.TemporaryDirectory()
+        self.addCleanup(t.cleanup)
+        return pub.gerar_todas(Path(t.name) / "p") + mem.gerar_todas(Path(t.name) / "m")
+
+    def test_toda_peca_tem_fundo_proprio(self):
+        for p in self._todas():
+            s = p.read_text()
+            cor = "#FFFFFF" if p.name.endswith("-claro.svg") else "#636466"
+            primeiro = re.search(r"</style>(<g[^>]*>)?<rect ([^>]*)/>", s)
+            self.assertIsNotNone(primeiro, f"{p.name}: sem retângulo de fundo logo no início")
+            self.assertIn(f'fill="{cor}"', primeiro.group(2), p.name)
