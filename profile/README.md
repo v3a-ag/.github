@@ -51,10 +51,12 @@ A gente olha para a rotina de cada área, encontra o que é repetitivo e transfo
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/trabalho-escuro.svg">
-  <img src="assets/trabalho-claro.svg" width="100%" alt="Como a gente trabalha. Começa pelo problema: primeiro entender a rotina da área, a ferramenta vem depois. Passos curtos: entrega pequena, usada cedo e melhorada com quem usa. Gente decide: o que importa passa por aprovação humana. Padrão em tudo: versão, backup e documentação desde o começo.">
-</picture>
+## Como a gente trabalha
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="assets/ic-alvo-escuro.svg"><img src="assets/ic-alvo-claro.svg" width="28" alt="" title="Começa pelo problema"></picture> **Começa pelo problema.** Primeiro entender a rotina da área. A ferramenta vem depois.
+- <picture><source media="(prefers-color-scheme: dark)" srcset="assets/ic-passos-escuro.svg"><img src="assets/ic-passos-claro.svg" width="28" alt="" title="Passos curtos"></picture> **Passos curtos.** Entrega pequena, usada cedo e melhorada com quem usa.
+- <picture><source media="(prefers-color-scheme: dark)" srcset="assets/ic-pessoa-escuro.svg"><img src="assets/ic-pessoa-claro.svg" width="28" alt="" title="Gente decide"></picture> **Gente decide.** O que importa passa por aprovação humana.
+- <picture><source media="(prefers-color-scheme: dark)" srcset="assets/ic-camadas-escuro.svg"><img src="assets/ic-camadas-claro.svg" width="28" alt="" title="Padrão em tudo"></picture> **Padrão em tudo.** Versão, backup e documentação desde o começo.
 
 ## Com o que a gente constrói
 

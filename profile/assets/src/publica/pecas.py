@@ -87,33 +87,12 @@ def card(nome: str):
     return gerar
 
 
-def trabalho(tema: str) -> str:
-    t = marca.TEMAS[tema]
-    c = COPY["trabalho"]
-    L, m, gx, gy = 1600, 80, 96, 64
-    col = (L - 2 * m - gx) / 2
-    topo = 190
-    blocos, y_linha = [], topo
-    for linha_i in range(2):
-        alt_linha = 0
-        for col_i in range(2):
-            ic, tit, txt = c["itens"][linha_i * 2 + col_i]
-            x = m + col_i * (col + gx)
-            linhas = svg.quebrar(txt, 30, col - 104)
-            blocos.append(
-                icone(ic, t["texto"], t["acento"], x, y_linha, 72)
-                + svg.linha(tit, x + 104, y_linha + 38, 40, t["texto"], 800, TRACK)
-                + svg.paragrafo(linhas, x + 104, y_linha + 86, 30, t["texto_suave"], 400, 1.35)
-            )
-            alt_linha = max(alt_linha, 86 + (len(linhas) - 1) * 30 * 1.35)
-        y_linha += alt_linha + gy
-    A = int(y_linha)
-    corpo = (
-        svg.linha(c["titulo"], m, 112, 64, t["texto"], 800, TRACK)
-        + f'<rect x="{m}" y="134" width="120" height="8" rx="4" fill="{t["acento"]}"/>'
-        + "".join(blocos)
-    )
-    return svg.peca(L, A, corpo, tema, "", c["titulo"])
+def icone_item(nome: str):
+    """Ícone pequeno, sem fundo, para a lista "Como a gente trabalha" (texto fica no README)."""
+    def gerar(tema: str) -> str:
+        t = marca.TEMAS[tema]
+        return svg.peca(96, 96, icone(nome, t["texto"], t["acento"], 8, 8, 80), tema, "", nome, fundo=False)
+    return gerar
 
 
 def fechamento(tema: str) -> str:
@@ -140,7 +119,8 @@ def gerar_todas(pasta: Path) -> list:
     saida = svg.salvar("banner", banner, pasta)
     for nome in COPY["cards"]:
         saida += svg.salvar(nome, card(nome), pasta)
-    saida += svg.salvar("trabalho", trabalho, pasta)
+    for ic, _, _ in COPY["trabalho"]["itens"]:
+        saida += svg.salvar(f"ic-{ic}", icone_item(ic), pasta)
     saida += svg.salvar("fechamento", fechamento, pasta)
     return saida
 

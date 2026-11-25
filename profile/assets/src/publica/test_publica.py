@@ -8,7 +8,7 @@ from PIL import Image
 from publica import gif_fluxo, pecas
 
 NOMES = ["banner", "card-horas", "card-planilha", "card-painel", "card-relatorio",
-         "card-ia", "card-durar", "trabalho", "fechamento"]
+         "card-ia", "card-durar", "ic-alvo", "ic-passos", "ic-pessoa", "ic-camadas", "fechamento"]
 
 
 def _textos(obj):
