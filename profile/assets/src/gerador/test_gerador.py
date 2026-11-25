@@ -73,6 +73,28 @@ class TestQuebra(unittest.TestCase):
         self.assertLessEqual(texto.largura("Relatório pronto, no padrão", t, 800), 300)
 
 
+class TestIdentidade(unittest.TestCase):
+    def test_grafismo_quatro_recortes_na_cor(self):
+        from gerador import identidade as idt
+        g = idt.grafismo(0, 0, 224, "#FFCB05", "graf")
+        self.assertEqual(g.count("<polygon"), 4)
+        self.assertIn('fill="#FFCB05"', g)
+        ys = [float(v.split(",")[1]) for v in re.findall(r"[\d.]+,[\d.]+", g)]
+        self.assertAlmostEqual(max(ys), 224 / 11.2, places=1)
+
+    def test_monograma_uma_cor_e_classe_no_g_interno(self):
+        from gerador import identidade as idt
+        m = idt.monograma(10, 10, 48, "#FFFFFF", "logo")
+        self.assertEqual(set(re.findall(r'fill="([^"]+)"', m)), {"#FFFFFF"})
+        self.assertNotRegex(m, r'<g transform="[^"]*" class=')
+        self.assertIn('<g class="logo"', m)
+
+    def test_claro_sem_moldura_escuro_com_bloco(self):
+        from gerador import identidade as idt
+        self.assertEqual(idt.fundo(100, 50, "claro"), "")
+        self.assertIn("#636466", idt.fundo(100, 50, "escuro"))
+
+
 class TestMarca(unittest.TestCase):
     def test_temas_tem_chaves(self):
         for tema in ("claro", "escuro"):

@@ -3,12 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from PIL import Image
+from publica import pecas
 
-from publica import gif_fluxo, pecas
-
-NOMES = ["banner", "card-horas", "card-planilha", "card-painel", "card-relatorio",
-         "card-ia", "card-durar", "ic-alvo", "ic-passos", "ic-pessoa", "ic-camadas", "fechamento"]
+NOMES = ["hero", "hero-celular", "secao-01", "secao-02", "secao-03", "secao-04", "metodo", "fechamento"]
 
 
 def _textos(obj):
@@ -28,51 +25,47 @@ class TestPublica(unittest.TestCase):
         cls.tmp = tempfile.TemporaryDirectory()
         cls.pasta = Path(cls.tmp.name)
         cls.svgs = pecas.gerar_todas(cls.pasta)
-        cls.gifs = gif_fluxo.gerar(cls.pasta)
 
     @classmethod
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
+    def _svg(self, nome, tema="claro"):
+        return (self.pasta / f"{nome}-{tema}.svg").read_text()
+
     def test_gera_todas_as_pecas(self):
         esperado = {f"{n}-{t}.svg" for n in NOMES for t in ("claro", "escuro")}
         self.assertEqual({p.name for p in self.svgs}, esperado)
-        for p in self.svgs:
-            self.assertTrue(p.exists())
 
-    def test_publica_sem_digitos(self):
+    def test_publica_sem_numeros_de_escala(self):
+        # numeração de seção/passo ("01.") é estilo do manual; contagem não
         for t in _textos(pecas.COPY):
-            self.assertIsNone(re.search(r"\d", t.replace("V3A", "")), t)
-        for t in gif_fluxo.PASSOS:
-            self.assertIsNone(re.search(r"\d", t.replace("V3A", "")), t)
+            limpo = re.sub(r"^0\d\.?$", "", t.replace("V3A", ""))
+            self.assertIsNone(re.search(r"\d", limpo), t)
 
-    def test_gif_limites(self):
-        self.assertEqual({p.name for p in self.gifs}, {"fluxo-claro.gif", "fluxo-escuro.gif"})
-        for p in self.gifs:
-            self.assertLessEqual(p.stat().st_size, 1_500_000)
-            with Image.open(p) as im:
-                self.assertLessEqual(im.width, 900)
-                self.assertGreater(im.n_frames, 1)
-                self.assertEqual(im.info.get("loop"), 0)
+    def test_claro_sem_moldura_escuro_em_bloco(self):
+        for nome in ("hero", "hero-celular", "fechamento"):
+            self.assertNotIn("<rect", self._svg(nome, "claro"), nome)
+            self.assertIn('fill="#636466"', self._svg(nome, "escuro"), nome)
 
-    def test_banner_tem_animacao(self):
-        s = (self.pasta / "banner-claro.svg").read_text()
-        self.assertIn("@keyframes", s)
+    def test_logo_e_grafismo_na_mesma_cor(self):
+        for tema, cor in (("claro", "#FFCB05"), ("escuro", "#FFFFFF")):
+            s = self._svg("hero", tema)
+            self.assertIn(f'<g class="logo" fill="{cor}">', s)
+            self.assertIn(f'<g class="graf" fill="{cor}">', s)
+
+    def test_so_hero_tem_entrada_e_so_metodo_tem_loop(self):
+        for nome in NOMES:
+            s = self._svg(nome)
+            tem_entrada = "@keyframes sobe" in s
+            self.assertEqual(tem_entrada, nome.startswith("hero"), nome)
+            self.assertEqual(s.count("infinite"), 1 if nome == "metodo" else 0, nome)
 
     def test_animado_nao_tem_transform_proprio(self):
-        # CSS transform da animação sobrescreve o atributo transform do SVG
         for p in self.svgs:
             s = p.read_text()
             self.assertNotRegex(s, r'<g class="[^"]*" transform=', p.name)
             self.assertNotRegex(s, r'<g transform="[^"]*" class=', p.name)
-
-    def test_cards_sem_entrada(self):
-        for n in NOMES:
-            if n == "banner":
-                continue
-            s = (self.pasta / f"{n}-claro.svg").read_text()
-            self.assertNotIn("entra", s, n)
-            self.assertLessEqual(s.count("infinite"), 1, n)
 
     def test_sem_text_nem_externo(self):
         for p in self.svgs:
