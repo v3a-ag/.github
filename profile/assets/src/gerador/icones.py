@@ -23,6 +23,8 @@ ICONES = {
     "foguete": lambda c, a: f'<path d="M32 6c10 8 14 20 10 34H22C18 26 22 14 32 6z"/><circle cx="32" cy="24" r="5"/><path d="M26 46l-4 10M38 46l4 10" stroke="{a}"/>',
     "time": lambda c, a: f'<circle cx="22" cy="22" r="8"/><circle cx="44" cy="22" r="8"/><path d="M6 54c2-10 8-14 16-14s14 4 16 14"/><path d="M34 44c3-3 6-4 10-4 8 0 14 4 16 14" stroke="{a}"/>',
     "seta": lambda c, a: '<path d="M14 32h36M38 20l12 12-12 12"/>',
+    "pdf": lambda c, a: f'<path d="M14 6h26l12 12v40H14z"/><path d="M40 6v12h12"/><path d="M22 36h20M22 46h14" stroke="{a}"/>',
+    "aranha": lambda c, a: f'<circle cx="32" cy="32" r="24"/><path d="M8 32h48M32 8c-8 8-8 40 0 48M32 8c8 8 8 40 0 48"/><circle cx="48" cy="48" r="6" fill="{a}" stroke="none"/>',
 }
 
 
