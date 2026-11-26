@@ -14,10 +14,13 @@ from gerador.icones import icone
 SLOGAN = {"titulo": ["TEMPO INTELIGENTE É", "EXPERIÊNCIA", "DE MARCA"],
           "assinatura": ["EXPERIÊNCIA", "DE MARCA", "É V3A."]}
 SLOGAN_ALT = "Tempo inteligente é experiência de marca. Experiência de marca é V3A."
+# Fechamento: versão aprovada pelo Igor em 25/11 (o hero usa o slogan; o fechamento, esta variação).
+FECHAMENTO = {"titulo": ["ROTINA RESOLVIDA É", "EXPERIÊNCIA", "DE MARCA"], "assinatura": SLOGAN["assinatura"]}
+FECHAMENTO_ALT = "Rotina resolvida é experiência de marca. Experiência de marca é V3A."
 
 COPY = {
     "hero": SLOGAN,
-    "fechamento": SLOGAN,
+    "fechamento": FECHAMENTO,
     "secoes": {
         "esteira": ("01.", "ONDE A AUTOMAÇÃO ENTRA",
                     "Cada job passa por cinco momentos, e em todos há rotina que pode sair da mão das pessoas."),
@@ -132,20 +135,20 @@ def fechamento(tema):
     W = 830
     w_logo = idt.largura_monograma(40)
     corpo = (idt.monograma(W - w_logo, 0, 40, t["logo"])
-             + _titulo(SLOGAN["titulo"], 0, 23, 33, 25.5, t["texto"], animado=False)
-             + _assinatura(SLOGAN["assinatura"], 440, 141, 21, 16.4, t["texto"], animado=False)
+             + _titulo(FECHAMENTO["titulo"], 0, 23, 33, 25.5, t["texto"], animado=False)
+             + _assinatura(FECHAMENTO["assinatura"], 440, 141, 21, 16.4, t["texto"], animado=False)
              + f'<g transform="translate(0 172)">{idt.grafismo(W - 157, 0, 157, t["logo"])}</g>')
-    return blc.bloco(tema, "desk", SLOGAN_ALT, corpo, 186)
+    return blc.bloco(tema, "desk", FECHAMENTO_ALT, corpo, 186)
 
 
 def fechamento_celular(tema):
     t = idt.TEMA[tema]
     W, lg = 360, 140
     corpo = (idt.monograma(0, 0, 34, t["logo"])
-             + _titulo(SLOGAN["titulo"], 0, 84, 36, 22, t["texto"], animado=False)
-             + _assinatura(SLOGAN["assinatura"], 0, 192, 19, 14.5, t["texto"], animado=False)
+             + _titulo(FECHAMENTO["titulo"], 0, 84, 36, 22, t["texto"], animado=False)
+             + _assinatura(FECHAMENTO["assinatura"], 0, 192, 19, 14.5, t["texto"], animado=False)
              + f'<g transform="translate(0 252)">{idt.grafismo(W - lg, 0, lg, t["logo"])}</g>')
-    return blc.bloco(tema, "cel", SLOGAN_ALT, corpo, 266)
+    return blc.bloco(tema, "cel", FECHAMENTO_ALT, corpo, 266)
 
 
 # ---------- corpos dos diagramas (coordenadas da área de conteúdo) ----------

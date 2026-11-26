@@ -162,12 +162,18 @@ class TestSloganEGrade(unittest.TestCase):
         self.assertEqual(self.pub.SLOGAN_ALT, "Tempo inteligente é experiência de marca. Experiência de marca é V3A.")
         self.assertEqual(self.pub.SLOGAN["titulo"], ["TEMPO INTELIGENTE É", "EXPERIÊNCIA", "DE MARCA"])
         self.assertEqual(self.pub.SLOGAN["assinatura"], ["EXPERIÊNCIA", "DE MARCA", "É V3A."])
-        for nomes, pecas in (((self.p), ("hero", "hero-celular", "fechamento", "fechamento-celular")),
-                             ((self.m), ("hero", "hero-celular"))):
+        for nomes, pecas in (((self.p), ("hero", "hero-celular")), ((self.m), ("hero", "hero-celular"))):
             for n in pecas:
                 for tema in ("claro", "escuro"):
                     s = nomes[f"{n}-{tema}.svg"]
                     self.assertIn(f"<title>{self.pub.SLOGAN_ALT}", s, n)
+
+    def test_fechamento_e_a_versao_aprovada(self):
+        # 25/11: o Igor pediu de volta o card de fechamento "Rotina resolvida é experiência de marca"
+        self.assertEqual(self.pub.COPY["fechamento"]["titulo"], ["ROTINA RESOLVIDA É", "EXPERIÊNCIA", "DE MARCA"])
+        self.assertEqual(self.pub.COPY["fechamento"]["assinatura"], ["EXPERIÊNCIA", "DE MARCA", "É V3A."])
+        for n in ("fechamento-claro.svg", "fechamento-celular-escuro.svg"):
+            self.assertIn("<title>Rotina resolvida é experiência de marca. Experiência de marca é V3A.", self.p[n])
 
     def test_grade_unica(self):
         for nome, s in list(self.p.items()) + list(self.m.items()):
