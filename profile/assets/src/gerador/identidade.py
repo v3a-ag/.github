@@ -28,13 +28,17 @@ GRAFISMO = [
 ]
 
 
-def grafismo(x: float, y: float, largura: float, cor: str, classe: str = "") -> str:
-    """Faixa do grafismo com canto superior esquerdo em (x, y). Altura = largura / 11,2."""
+def grafismo(x: float, y: float, largura: float, cor: str, classe: str = "", pecas: bool = False) -> str:
+    """Faixa do grafismo com canto superior esquerdo em (x, y). Altura = largura / 11,2.
+
+    `pecas=True` dá a cada recorte a classe gp0..gp3 (para subirem um de cada vez).
+    """
     altura = largura / RAZAO_GRAFISMO
     cls = f' class="{classe}"' if classe else ""
     polis = "".join(
-        '<polygon points="' + " ".join(f"{x + px * largura:.1f},{y + py * altura:.1f}" for px, py in p) + '"/>'
-        for p in GRAFISMO)
+        (f'<polygon class="gp{i}" points="' if pecas else '<polygon points="')
+        + " ".join(f"{x + px * largura:.1f},{y + py * altura:.1f}" for px, py in p) + '"/>'
+        for i, p in enumerate(GRAFISMO))
     return f'<g{cls} fill="{cor}">{polis}</g>'
 
 

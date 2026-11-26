@@ -8,7 +8,9 @@ from pathlib import Path
 
 from gerador import bloco as blc
 from gerador import identidade as idt
+from gerador import motion
 from gerador import svg
+from gerador import texto as tx
 from gerador.icones import icone
 
 SLOGAN = {"titulo": ["TEMPO INTELIGENTE É", "EXPERIÊNCIA", "DE MARCA"],
@@ -18,8 +20,13 @@ SLOGAN_ALT = "Tempo inteligente é experiência de marca. Experiência de marca 
 FECHAMENTO = {"titulo": ["ROTINA RESOLVIDA É", "EXPERIÊNCIA", "DE MARCA"], "assinatura": SLOGAN["assinatura"]}
 FECHAMENTO_ALT = "Rotina resolvida é experiência de marca. Experiência de marca é V3A."
 
+# O 'X' do hero gira entre benefícios que quem recebe a automação sente; a primeira é o slogan.
+PALAVRAS = ["TEMPO INTELIGENTE", "ROTINA RESOLVIDA", "DADO CONFIÁVEL", "PROCESSO SEM ATRITO",
+            "ENTREGA NO PRAZO", "FECHAMENTO SEM SUSTO", "CONTA QUE BATE", "EQUIPE LIVRE"]
+
 COPY = {
     "hero": SLOGAN,
+    "palavras": PALAVRAS,
     "fechamento": FECHAMENTO,
     "secoes": {
         "esteira": ("01.", "ONDE A AUTOMAÇÃO ENTRA",
@@ -66,15 +73,7 @@ COPY = {
               ("google", "GOOGLE WORKSPACE"), ("githubactions", "GITHUB ACTIONS"), ("claude", "CLAUDE")],
 }
 
-ENTRADA = (
-    "@keyframes sobe{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}"
-    "@keyframes fade{from{opacity:0}to{opacity:1}}"
-    ".logo{animation:fade .6s ease-out both}"
-    ".l{animation:sobe .6s ease-out both}"
-    ".l0{animation-delay:.2s}.l1{animation-delay:.38s}.l2{animation-delay:.52s}"
-    ".ass{animation:fade .6s .9s ease-out both}"
-    ".graf{animation:sobe .7s 1.1s cubic-bezier(.2,.7,.2,1) both}"
-)
+ENTRADA = motion.entrada_hero()  # usado também pelo hero de membros
 
 
 def _ic(nome, t, x, y, tam):
@@ -97,37 +96,39 @@ def _assinatura(linhas, x, y0, passo, tam, cor, animado=True):
         for i, s in enumerate(linhas)) + "</g>")
 
 
-def _passo_css(nome, eixo, passo, n, dur):
-    quadros, fatia = [], 100 / n
-    for i in range(n):
-        ini, fim = i * fatia, i * fatia + fatia * 0.8
-        quadros.append(f"{ini + (3 if i == 0 else 0):.1f}%{{transform:translate{eixo}({i * passo:.0f}px);opacity:1}}")
-        quadros.append(f"{fim:.1f}%{{transform:translate{eixo}({i * passo:.0f}px);opacity:1}}")
-    corpo = "0%{transform:translate" + eixo + "(0);opacity:0}" + "".join(quadros) + \
-            "100%{transform:translate" + eixo + f"({(n - 1) * passo:.0f}px);opacity:0}}"
-    return f"@keyframes {nome}{{{corpo}}}.{nome}{{animation:{nome} {dur}s ease-in-out infinite}}"
+def _linha_x(x, y, tam):
+    """Linha 1 do hero: o 'X' (palavras empilhadas, uma visível por vez) e o 'É' que desliza junto."""
+    def w(txt):
+        return tx.largura(txt + " ", tam, 400, 0.005)
+    palavras = "".join(f'<g class="pal pal{k}">' + svg.linha(p, x, y, tam, "{cor}", 400, 0.005) + "</g>"
+                       for k, p in enumerate(PALAVRAS))
+    e = '<g class="e">' + svg.linha("É", x + w(PALAVRAS[0]), y, tam, "{cor}", 400, 0.005) + "</g>"
+    desloc = [w(p) - w(PALAVRAS[0]) for p in PALAVRAS]
+    return palavras + e, motion.palavras(len(PALAVRAS), desloc)
 
-
-# ---------- hero e fechamento (o slogan, idêntico) ----------
 
 def hero(tema):
     t = idt.TEMA[tema]
     W, x = 830, 440
+    linha1, css = _linha_x(x, 23, 25.5)
     corpo = (idt.monograma(0, 0, 48, t["logo"], "logo")
-             + _titulo(SLOGAN["titulo"], x, 23, 33, 25.5, t["texto"])
+             + linha1.replace("{cor}", t["texto"])
+             + _titulo(SLOGAN["titulo"], x, 23, 33, 25.5, t["texto"]).split("</g>", 1)[1]
              + _assinatura(SLOGAN["assinatura"], x, 141, 21, 16.4, t["texto"])
-             + f'<g transform="translate(0 172)">{idt.grafismo(W - 157, 0, 157, t["logo"], "graf")}</g>')
-    return blc.bloco(tema, "desk", SLOGAN_ALT, corpo, 186, ENTRADA)
+             + f'<g transform="translate(0 172)">{idt.grafismo(W - 157, 0, 157, t["logo"], pecas=True)}</g>')
+    return blc.bloco(tema, "desk", SLOGAN_ALT, corpo, 186, ENTRADA + css)
 
 
 def hero_celular(tema):
     t = idt.TEMA[tema]
     W, lg = 360, 140
+    linha1, css = _linha_x(0, 88, 24)
     corpo = (idt.monograma(0, 0, 36, t["logo"], "logo")
-             + _titulo(SLOGAN["titulo"], 0, 88, 38, 24, t["texto"])
+             + linha1.replace("{cor}", t["texto"])
+             + _titulo(SLOGAN["titulo"], 0, 88, 38, 24, t["texto"]).split("</g>", 1)[1]
              + _assinatura(SLOGAN["assinatura"], 0, 200, 19, 14.5, t["texto"])
-             + f'<g transform="translate(0 252)">{idt.grafismo(W - lg, 0, lg, t["logo"], "graf")}</g>')
-    return blc.bloco(tema, "cel", SLOGAN_ALT, corpo, 266, ENTRADA)
+             + f'<g transform="translate(0 252)">{idt.grafismo(W - lg, 0, lg, t["logo"], pecas=True)}</g>')
+    return blc.bloco(tema, "cel", SLOGAN_ALT, corpo, 266, ENTRADA + css)
 
 
 def fechamento(tema):
@@ -169,7 +170,7 @@ def _esteira_desk(t):
     p.append(f'<circle class="anel" cx="{xs[0]}" cy="{cy}" r="{r + 2}" fill="none" stroke="{t["destaque"]}" stroke-width="5"/>')
     A = 236
     p.append(svg.linha(COPY["esteira_rodape"], 0, A, 13.5, t["texto"], 800, 0.04))
-    return "".join(p), A + 4, _passo_css("anel", "X", passo, len(est), 11)
+    return "".join(p), A + 4, motion.passos("anel", "X", passo, len(est))
 
 
 def _esteira_cel(t):
@@ -187,12 +188,10 @@ def _esteira_cel(t):
     linhas = svg.quebrar(COPY["esteira_rodape"], 14, 360, 800, 0.03)
     for j, l in enumerate(linhas):
         p.append(svg.linha(l, 0, y + j * 20, 14, t["texto"], 800, 0.03))
-    return "".join(p), y + (len(linhas) - 1) * 20 + 4, _passo_css("anel", "Y", passo, len(est), 11)
+    return "".join(p), y + (len(linhas) - 1) * 20 + 4, motion.passos("anel", "Y", passo, len(est))
 
 
-CICLO = ("@keyframes ciclo{0%{opacity:0}4%{opacity:1}30%{opacity:1}34%{opacity:0}100%{opacity:0}}"
-         ".ex{animation:ciclo 12s infinite both}.ex1{animation-delay:4s;opacity:0}.ex2{animation-delay:8s;opacity:0}"
-         "@keyframes flui{to{stroke-dashoffset:-20}}.flui{animation:flui 1s linear infinite}")
+CICLO = motion.ciclo(3) + motion.fluxo()
 
 
 def _exemplos(col, t, cx, y_ic, y_txt, tam_ic, tam_txt, larg_txt, meio=True):
@@ -253,12 +252,6 @@ def _anatomia_cel(t):
     return "".join(p), len(etapas) * h + (len(etapas) - 1) * gap + 4, CICLO
 
 
-def _pacote_css(eixo, dist):
-    return (f"@keyframes pacote{{0%{{transform:translate{eixo}(0);opacity:0}}6%{{opacity:1}}"
-            f"90%{{opacity:1}}100%{{transform:translate{eixo}({dist:.0f}px);opacity:0}}}}"
-            ".pacote{animation:pacote 5s cubic-bezier(.45,0,.55,1) infinite}")
-
-
 def _arquitetura_desk(t):
     nos = COPY["arquitetura"]
     W, cy, s = 830, 40, 76
@@ -274,7 +267,7 @@ def _arquitetura_desk(t):
         p.append(svg.linha(desc, x, cy + s / 2 + 52, 13.5, t["suave"], 400, 0, ancora="meio"))
     A = 186
     p.append(svg.linha(COPY["arquitetura_rodape"], 0, A, 13.5, t["texto"], 800, 0.04))
-    return "".join(p), A + 4, _pacote_css("X", xs[-1] - xs[0])
+    return "".join(p), A + 4, motion.passos("pacote", "X", passo, len(nos))
 
 
 def _arquitetura_cel(t):
@@ -293,7 +286,7 @@ def _arquitetura_cel(t):
     linhas = svg.quebrar(COPY["arquitetura_rodape"], 14, 360, 800, 0.03)
     for j, l in enumerate(linhas):
         p.append(svg.linha(l, 0, y + j * 20, 14, t["texto"], 800, 0.03))
-    return "".join(p), y + (len(linhas) - 1) * 20 + 4, _pacote_css("Y", passo * (len(nos) - 1))
+    return "".join(p), y + (len(linhas) - 1) * 20 + 4, motion.passos("pacote", "Y", passo, len(nos))
 
 
 def _grade(itens, colunas, larg_cel, alt_cel, desenha, t, tam_ic, tam_txt):

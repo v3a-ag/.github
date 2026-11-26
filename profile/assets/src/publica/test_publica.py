@@ -6,7 +6,7 @@ from pathlib import Path
 from publica import pecas
 
 NOMES = list(pecas.PECAS)
-COM_LOOP = {"esteira", "esteira-celular", "anatomia", "anatomia-celular", "arquitetura", "arquitetura-celular"}
+COM_LOOP = {"hero", "hero-celular", "esteira", "esteira-celular", "anatomia", "anatomia-celular", "arquitetura", "arquitetura-celular"}
 
 
 def _textos(obj):
@@ -63,18 +63,41 @@ class TestPublica(unittest.TestCase):
         for tema, cor in (("claro", "#FFCB05"), ("escuro", "#FFFFFF")):
             s = self._svg("hero", tema)
             self.assertIn(f'<g class="logo" fill="{cor}">', s)
-            self.assertIn(f'<g class="graf" fill="{cor}">', s)
+            self.assertIn(f'<g fill="{cor}"><polygon class="gp0"', s)  # grafismo sobe peça por peça
 
     def test_entrada_so_no_hero_e_loops_nos_diagramas(self):
         for nome in NOMES:
             s = self._svg(nome)
-            self.assertEqual("@keyframes sobe" in s, nome.startswith("hero"), nome)
+            self.assertEqual("@keyframes entra" in s, nome.startswith("hero"), nome)
             self.assertEqual("infinite" in s, nome in COM_LOOP, nome)
 
-    def test_ciclo_mostra_primeiro_exemplo_sem_animacao(self):
+    def test_em_repouso_so_a_primeira_variacao_aparece(self):
         s = self._svg("anatomia")
-        self.assertIn(".ex1{animation-delay:4s;opacity:0}", s)
-        self.assertIn(".ex2{animation-delay:8s;opacity:0}", s)
+        self.assertRegex(s, r"\.ex1\{animation-delay:[\d.]+s;opacity:0\}")
+        self.assertRegex(s, r"\.ex2\{animation-delay:[\d.]+s;opacity:0\}")
+        self.assertNotRegex(s, r"\.ex0\{[^}]*opacity:0")
+        h = self._svg("hero")
+        self.assertIn(".pal{opacity:0}.pal0{opacity:1}", h)
+
+    def test_hero_gira_as_palavras_e_o_e_desliza(self):
+        h = self._svg("hero")
+        self.assertEqual(h.count('<g class="pal pal'), len(pecas.PALAVRAS))
+        self.assertEqual(h.count('<g class="e">'), 1)
+        self.assertEqual(pecas.PALAVRAS[0], "TEMPO INTELIGENTE")
+        from gerador import texto as tx
+        for p in pecas.PALAVRAS:  # cabe na coluna do texto (desktop 390, celular 360)
+            self.assertLess(tx.largura(p + " É", 25.5, 400, 0.005), 390, p)
+            self.assertLess(tx.largura(p + " É", 24, 400, 0.005), 360, p)
+
+    def test_motion_sem_linear_e_com_curvas_suaves(self):
+        from gerador import motion
+        for nome in NOMES:
+            s = self._svg(nome)
+            for regra in re.findall(r"animation:[^;}]*", s):
+                if "linear" in regra:
+                    self.assertIn("flui", regra, nome)
+            if "@keyframes" in s and nome not in ("anatomia", "anatomia-celular"):
+                self.assertTrue(motion.EASE_OUT in s or motion.EASE_IN_OUT in s, nome)
 
     def test_nada_cortado_na_borda(self):
         for nome in ("anatomia",):
