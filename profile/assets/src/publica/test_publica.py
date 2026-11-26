@@ -39,7 +39,7 @@ class TestPublica(unittest.TestCase):
         self.assertEqual({p.name for p in self.svgs}, esperado)
 
     def test_todo_diagrama_tem_versao_celular(self):
-        for nome in ("hero", "esteira", "anatomia", "arquitetura", "principios", "stack", "fechamento"):
+        for nome in ("hero", "esteira", "anatomia", "arquitetura", "principios", "stack", "rodape"):
             self.assertIn(f"{nome}-celular", pecas.PECAS)
 
     def test_publica_sem_numeros_de_escala(self):
