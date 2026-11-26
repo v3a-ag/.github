@@ -4,8 +4,6 @@
   <img src="assets/hero-claro.svg" width="100%" alt="Tempo inteligente é experiência de marca. Experiência de marca é V3A.">
 </picture>
 
-A área de **Automação & IA** da V3A tira o trabalho repetitivo do caminho dos times, do briefing ao fechamento de cada job, para que o tempo vá para o que só gente faz: criar experiência.
-
 <picture>
   <source media="(max-width: 600px)" srcset="assets/esteira-celular-escuro.svg">
   <source media="(prefers-color-scheme: dark)" srcset="assets/esteira-escuro.svg">
@@ -30,15 +28,6 @@ A área de **Automação & IA** da V3A tira o trabalho repetitivo do caminho dos
   <img src="assets/principios-claro.svg" width="100%" alt="04. Princípios. Princípios: gente no centro, dado não achismo, versão e backup, passos curtos.">
 </picture>
 
-<details>
-<summary><b>Como a gente usa IA com responsabilidade</b></summary>
-<br>
-
-- A IA sugere; uma pessoa aprova o que sai para cliente, diretoria ou financeiro.
-- Dado de cliente fica onde deve ficar, e nunca em repositório.
-- Toda automação tem dono, versão, teste e backup.
-
-</details>
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/stack-celular-escuro.svg">
