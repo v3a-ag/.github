@@ -36,9 +36,9 @@
 </picture>
 
 <picture>
-  <source media="(max-width: 600px)" srcset="assets/fechamento-celular-escuro.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="assets/fechamento-escuro.svg">
-  <img src="assets/fechamento-claro.svg" width="100%" alt="Rotina resolvida é experiência de marca. Experiência de marca é V3A.">
+  <source media="(max-width: 600px)" srcset="assets/rodape-celular-escuro.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/rodape-escuro.svg">
+  <img src="assets/rodape-claro.svg" width="100%" alt="V3A">
 </picture>
 
 **[livemkt.v3a.ag](https://livemkt.v3a.ag/)** · [operacoes@v3a.ag](mailto:operacoes@v3a.ag)
