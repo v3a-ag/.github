@@ -56,7 +56,7 @@ A área de **Automação & IA** da V3A tira o trabalho repetitivo do caminho dos
   <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/fechamento-celular-escuro.svg">
   <source media="(max-width: 600px)" srcset="assets/fechamento-celular-claro.svg">
   <source media="(prefers-color-scheme: dark)" srcset="assets/fechamento-escuro.svg">
-  <img src="assets/fechamento-claro.svg" width="100%" alt="Tempo inteligente é experiência de marca. Experiência de marca é V3A.">
+  <img src="assets/fechamento-claro.svg" width="100%" alt="Rotina resolvida é experiência de marca. Experiência de marca é V3A.">
 </picture>
 
 **[livemkt.v3a.ag](https://livemkt.v3a.ag/)** · [operacoes@v3a.ag](mailto:operacoes@v3a.ag)
