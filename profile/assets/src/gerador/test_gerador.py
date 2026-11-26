@@ -143,3 +143,39 @@ class TestLegivelEmQualquerFundo(unittest.TestCase):
             primeiro = re.search(r"</style>(<g[^>]*>)?<rect ([^>]*)/>", s)
             self.assertIsNotNone(primeiro, f"{p.name}: sem retângulo de fundo logo no início")
             self.assertIn(f'fill="{cor}"', primeiro.group(2), p.name)
+
+
+class TestSloganEGrade(unittest.TestCase):
+    """25/11: o slogan do Igor não pode variar; e toda peça segue a mesma grade (largura e margem)."""
+
+    def setUp(self):
+        import tempfile
+        from publica import pecas as pub
+        from membros import pecas as mem
+        t = tempfile.TemporaryDirectory()
+        self.addCleanup(t.cleanup)
+        self.pub, self.mem = pub, mem
+        self.p = {f.name: f.read_text() for f in pub.gerar_todas(Path(t.name) / "p")}
+        self.m = {f.name: f.read_text() for f in mem.gerar_todas(Path(t.name) / "m")}
+
+    def test_slogan_identico(self):
+        self.assertEqual(self.pub.SLOGAN_ALT, "Tempo inteligente é experiência de marca. Experiência de marca é V3A.")
+        self.assertEqual(self.pub.SLOGAN["titulo"], ["TEMPO INTELIGENTE É", "EXPERIÊNCIA", "DE MARCA"])
+        self.assertEqual(self.pub.SLOGAN["assinatura"], ["EXPERIÊNCIA", "DE MARCA", "É V3A."])
+        for nomes, pecas in (((self.p), ("hero", "hero-celular", "fechamento", "fechamento-celular")),
+                             ((self.m), ("hero", "hero-celular"))):
+            for n in pecas:
+                for tema in ("claro", "escuro"):
+                    s = nomes[f"{n}-{tema}.svg"]
+                    self.assertIn(f"<title>{self.pub.SLOGAN_ALT}", s, n)
+
+    def test_grade_unica(self):
+        for nome, s in list(self.p.items()) + list(self.m.items()):
+            larg = int(re.search(r'viewBox="0 0 (\d+) ', s).group(1))
+            if nome.startswith("btn-"):
+                self.assertEqual(larg, 200 if "-celular-" in nome else 447, nome)
+                continue
+            cel = "-celular-" in nome
+            self.assertEqual(larg, 400 if cel else 894, nome)
+            m = 20 if cel else 32
+            self.assertIn(f'<g transform="translate({m} {m})">', s, nome)
