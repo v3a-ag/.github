@@ -5,7 +5,7 @@ from pathlib import Path
 
 from publica import pecas
 
-NOMES = list(pecas.PECAS) + list(pecas.COPY["secoes"])
+NOMES = list(pecas.PECAS)
 COM_LOOP = {"esteira", "esteira-celular", "anatomia", "anatomia-celular", "arquitetura", "arquitetura-celular"}
 
 
@@ -46,6 +46,11 @@ class TestPublica(unittest.TestCase):
         for t in _textos(pecas.COPY):
             limpo = re.sub(r"^0\d\.?$|n8n", "", t.replace("V3A", ""), flags=re.I)  # numeração e nome de ferramenta
             self.assertIsNone(re.search(r"\d", limpo), t)
+
+    def test_secao_tem_titulo_dentro_do_bloco(self):
+        for chave, (num, titulo, _) in pecas.COPY["secoes"].items():
+            for nome in (chave, f"{chave}-celular"):
+                self.assertIn(f"<title>{num} {titulo.capitalize()}.", self._svg(nome), nome)
 
     def test_claro_branco_sem_contorno_escuro_cinza(self):
         for nome in NOMES:

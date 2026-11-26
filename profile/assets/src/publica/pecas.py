@@ -1,26 +1,32 @@
-"""Peças da página pública (v3a-ag/.github/profile) — v3: técnica e operacional, com gráficos animados.
+"""Peças da página pública (v3a-ag/.github/profile) — v4.
 
-Narrativa: hero (promessa) → onde a automação entra (esteira de um job) → anatomia de uma automação
-(entrada → processamento → saída → validação humana) → do pedido à produção (como é construída)
-→ princípios → ferramentas → fechamento. Sem números de escala, sem nome de automação, cliente,
-pessoa ou servidor.
+Técnica e operacional, com gráficos animados. Grade única (gerador/bloco.py): todas as peças com a
+mesma largura e margem, título da seção dentro do bloco. Slogan do Igor, sem variação:
+"Tempo inteligente é experiência de marca. Experiência de marca é V3A."
 """
 from pathlib import Path
 
+from gerador import bloco as blc
 from gerador import identidade as idt
 from gerador import svg
-from gerador import texto as tx
 from gerador.icones import icone
 
+SLOGAN = {"titulo": ["TEMPO INTELIGENTE É", "EXPERIÊNCIA", "DE MARCA"],
+          "assinatura": ["EXPERIÊNCIA", "DE MARCA", "É V3A."]}
+SLOGAN_ALT = "Tempo inteligente é experiência de marca. Experiência de marca é V3A."
+
 COPY = {
-    "hero": {"titulo": ["TEMPO INTELIGENTE É", "EXPERIÊNCIA", "DE MARCA"],
-             "assinatura": ["EXPERIÊNCIA", "DE MARCA", "É V3A."]},
+    "hero": SLOGAN,
+    "fechamento": SLOGAN,
     "secoes": {
-        "secao-01": ("01.", "ONDE A AUTOMAÇÃO ENTRA"),
-        "secao-02": ("02.", "ANATOMIA DE UMA AUTOMAÇÃO"),
-        "secao-03": ("03.", "DO PEDIDO À PRODUÇÃO"),
-        "secao-04": ("04.", "PRINCÍPIOS"),
-        "secao-05": ("05.", "COM O QUE A GENTE CONSTRÓI"),
+        "esteira": ("01.", "ONDE A AUTOMAÇÃO ENTRA",
+                    "Cada job passa por cinco momentos, e em todos há rotina que pode sair da mão das pessoas."),
+        "anatomia": ("02.", "ANATOMIA DE UMA AUTOMAÇÃO",
+                     "Toda automação tem a mesma forma, e alguém sempre confere antes de seguir."),
+        "arquitetura": ("03.", "DO PEDIDO À PRODUÇÃO",
+                        "Nasce de um card, vira código e só entra em produção pela esteira, com aprovação."),
+        "principios": ("04.", "PRINCÍPIOS", "O que orienta cada automação que a gente coloca no ar."),
+        "stack": ("05.", "COM O QUE A GENTE CONSTRÓI", "As ferramentas por trás das automações."),
     },
     "esteira": [
         ("balao", "BRIEFING E ABERTURA", "Estruturar o job"),
@@ -55,8 +61,6 @@ COPY = {
     ],
     "stack": [("n8n", "N8N"), ("python", "PYTHON"), ("supabase", "SUPABASE"),
               ("google", "GOOGLE WORKSPACE"), ("githubactions", "GITHUB ACTIONS"), ("claude", "CLAUDE")],
-    "fechamento": {"titulo": ["ROTINA RESOLVIDA É", "EXPERIÊNCIA", "DE MARCA"],
-                   "assinatura": ["EXPERIÊNCIA", "DE MARCA", "É V3A."]},
 }
 
 ENTRADA = (
@@ -79,19 +83,18 @@ def _ic(nome, t, x, y, tam):
 def _titulo(linhas, x, y0, passo, tam, cor, animado=True):
     pesos = [400, 800, 800]
     return "".join((f'<g class="l l{i}">' if animado else "<g>")
-                   + svg.linha(t, x, y0 + i * passo, tam, cor, pesos[i], 0.005) + "</g>"
-                   for i, t in enumerate(linhas))
+                   + svg.linha(s, x, y0 + i * passo, tam, cor, pesos[i], 0.005) + "</g>"
+                   for i, s in enumerate(linhas))
 
 
-def _assinatura(linhas, x, y0, passo, tam, cor, classe="ass"):
-    cls = f' class="{classe}"' if classe else ""
+def _assinatura(linhas, x, y0, passo, tam, cor, animado=True):
+    cls = ' class="ass"' if animado else ""
     return (f"<g{cls}>" + "".join(
-        svg.linha(t, x, y0 + i * passo, tam, cor, 800 if i == len(linhas) - 1 else 400, 0.005)
-        for i, t in enumerate(linhas)) + "</g>")
+        svg.linha(s, x, y0 + i * passo, tam, cor, 800 if i == len(linhas) - 1 else 400, 0.005)
+        for i, s in enumerate(linhas)) + "</g>")
 
 
 def _passo_css(nome, eixo, passo, n, dur):
-    """Keyframes que param em cada uma das n posições (eixo X ou Y), com fade no fim."""
     quadros, fatia = [], 100 / n
     for i in range(n):
         ini, fim = i * fatia, i * fatia + fatia * 0.8
@@ -102,77 +105,55 @@ def _passo_css(nome, eixo, passo, n, dur):
     return f"@keyframes {nome}{{{corpo}}}.{nome}{{animation:{nome} {dur}s ease-in-out infinite}}"
 
 
-# ---------- hero e fechamento ----------
+# ---------- hero e fechamento (o slogan, idêntico) ----------
 
 def hero(tema):
     t = idt.TEMA[tema]
-    L, A, x = 830, 226, 458
-    c = COPY["hero"]
-    corpo = (idt.fundo(L, A, tema) + idt.monograma(34, 24, 48, t["logo"], "logo")
-             + _titulo(c["titulo"], x, 47, 33, 25.5, t["texto"])
-             + _assinatura(c["assinatura"], x - 2, 165, 21, 16.4, t["texto"])
-             + f'<g transform="translate(0 196)">{idt.grafismo(618, 0, 157, t["logo"], "graf")}</g>')
-    return idt.svg_aberto(L, A, "Tempo inteligente é experiência de marca. Experiência de marca é V3A.", ENTRADA, corpo)
+    W, x = 830, 440
+    corpo = (idt.monograma(0, 0, 48, t["logo"], "logo")
+             + _titulo(SLOGAN["titulo"], x, 23, 33, 25.5, t["texto"])
+             + _assinatura(SLOGAN["assinatura"], x, 141, 21, 16.4, t["texto"])
+             + f'<g transform="translate(0 172)">{idt.grafismo(W - 157, 0, 157, t["logo"], "graf")}</g>')
+    return blc.bloco(tema, "desk", SLOGAN_ALT, corpo, 186, ENTRADA)
 
 
 def hero_celular(tema):
     t = idt.TEMA[tema]
-    L, A, x, lg = 360, 320, 24, 140
-    c = COPY["hero"]
-    corpo = (idt.fundo(L, A, tema) + idt.monograma(x, 24, 36, t["logo"], "logo")
-             + _titulo(c["titulo"], x, 112, 38, 24, t["texto"])
-             + _assinatura(c["assinatura"], x, 226, 19, 14.5, t["texto"])
-             + f'<g transform="translate(0 {A - 28 - lg / idt.RAZAO_GRAFISMO:.1f})">'
-               f'{idt.grafismo(L - 24 - lg, 0, lg, t["logo"], "graf")}</g>')
-    return idt.svg_aberto(L, A, "Tempo inteligente é experiência de marca. Experiência de marca é V3A.", ENTRADA, corpo)
+    W, lg = 360, 140
+    corpo = (idt.monograma(0, 0, 36, t["logo"], "logo")
+             + _titulo(SLOGAN["titulo"], 0, 88, 38, 24, t["texto"])
+             + _assinatura(SLOGAN["assinatura"], 0, 200, 19, 14.5, t["texto"])
+             + f'<g transform="translate(0 252)">{idt.grafismo(W - lg, 0, lg, t["logo"], "graf")}</g>')
+    return blc.bloco(tema, "cel", SLOGAN_ALT, corpo, 266, ENTRADA)
 
 
 def fechamento(tema):
     t = idt.TEMA[tema]
-    L, A, x = 830, 226, 34
-    c = COPY["fechamento"]
+    W = 830
     w_logo = idt.largura_monograma(40)
-    corpo = (idt.fundo(L, A, tema) + idt.monograma(L - 34 - w_logo, 28, 40, t["logo"])
-             + _titulo(c["titulo"], x, 70, 33, 25.5, t["texto"], animado=False)
-             + _assinatura(c["assinatura"], 458, 165, 21, 16.4, t["texto"], classe="")
-             + f'<g transform="translate(0 196)">{idt.grafismo(618, 0, 157, t["logo"])}</g>')
-    return idt.svg_aberto(L, A, "Rotina resolvida é experiência de marca. Experiência de marca é V3A.", "", corpo)
+    corpo = (idt.monograma(W - w_logo, 0, 40, t["logo"])
+             + _titulo(SLOGAN["titulo"], 0, 23, 33, 25.5, t["texto"], animado=False)
+             + _assinatura(SLOGAN["assinatura"], 440, 141, 21, 16.4, t["texto"], animado=False)
+             + f'<g transform="translate(0 172)">{idt.grafismo(W - 157, 0, 157, t["logo"])}</g>')
+    return blc.bloco(tema, "desk", SLOGAN_ALT, corpo, 186)
 
 
 def fechamento_celular(tema):
     t = idt.TEMA[tema]
-    L, A, x, lg = 360, 300, 24, 140
-    c = COPY["fechamento"]
-    corpo = (idt.fundo(L, A, tema) + idt.monograma(x, 24, 34, t["logo"])
-             + _titulo(c["titulo"], x, 108, 36, 22, t["texto"], animado=False)
-             + _assinatura(c["assinatura"], x, 214, 19, 14.5, t["texto"], classe="")
-             + f'<g transform="translate(0 {A - 28 - lg / idt.RAZAO_GRAFISMO:.1f})">'
-               f'{idt.grafismo(L - 24 - lg, 0, lg, t["logo"])}</g>')
-    return idt.svg_aberto(L, A, "Rotina resolvida é experiência de marca. Experiência de marca é V3A.", "", corpo)
+    W, lg = 360, 140
+    corpo = (idt.monograma(0, 0, 34, t["logo"])
+             + _titulo(SLOGAN["titulo"], 0, 84, 36, 22, t["texto"], animado=False)
+             + _assinatura(SLOGAN["assinatura"], 0, 192, 19, 14.5, t["texto"], animado=False)
+             + f'<g transform="translate(0 252)">{idt.grafismo(W - lg, 0, lg, t["logo"])}</g>')
+    return blc.bloco(tema, "cel", SLOGAN_ALT, corpo, 266)
 
 
-# ---------- seções ----------
+# ---------- corpos dos diagramas (coordenadas da área de conteúdo) ----------
 
-def secao(chave):
-    num, titulo = COPY["secoes"][chave]
-
-    def gerar(tema):
-        t = idt.TEMA[tema]
-        L, A, tam = 830, 60, 32
-        w_num = tx.largura(num, tam, 900, 0)
-        corpo = (svg.linha(num, 2, 44, tam, t["destaque"], 900, 0)
-                 + svg.linha(titulo, w_num + 14, 44, tam, t["texto"], 800, 0.005))
-        return idt.svg_aberto(L, A, f"{num} {titulo.capitalize()}", "", corpo, tema, 16)
-    return gerar
-
-
-# ---------- 01. esteira de um job ----------
-
-def esteira(tema):
-    t = idt.TEMA[tema]
-    L, A, cy, r = 830, 268, 64, 38
+def _esteira_desk(t):
+    W, cy, r = 830, 40, 38
     est = COPY["esteira"]
-    passo = (L - 166) / (len(est) - 1)
+    passo = (W - 166) / (len(est) - 1)
     xs = [83 + i * passo for i in range(len(est))]
     p = [f'<rect x="{xs[0]}" y="{cy - 1.5}" width="{xs[-1] - xs[0]}" height="3" fill="{t["linha"]}"/>']
     for x, (ic, rot, desc) in zip(xs, est):
@@ -183,110 +164,102 @@ def esteira(tema):
         for j, l in enumerate(svg.quebrar(desc, 13.5, 140, 400)):
             p.append(svg.linha(l, x, cy + r + 74 + j * 18, 13.5, t["suave"], 400, 0, ancora="meio"))
     p.append(f'<circle class="anel" cx="{xs[0]}" cy="{cy}" r="{r + 2}" fill="none" stroke="{t["destaque"]}" stroke-width="5"/>')
-    p.append(svg.linha(COPY["esteira_rodape"], L / 2, A - 14, 13.5, t["texto"], 800, 0.04, ancora="meio"))
-    css = _passo_css("anel", "X", passo, len(est), 11)
-    return idt.svg_aberto(L, A, "Onde a automação entra: briefing e abertura, planejamento, pré-produção, "
-                                "produção e fechamento. O trabalho humano permanece no centro.", css, "".join(p), tema, 24)
+    A = 236
+    p.append(svg.linha(COPY["esteira_rodape"], 0, A, 13.5, t["texto"], 800, 0.04))
+    return "".join(p), A + 4, _passo_css("anel", "X", passo, len(est), 11)
 
 
-def esteira_celular(tema):
-    t = idt.TEMA[tema]
+def _esteira_cel(t):
     est = COPY["esteira"]
-    L, cx, r, passo, y0 = 360, 48, 30, 92, 44
-    A = y0 + passo * (len(est) - 1) + 96
+    cx, r, passo, y0 = 30, 30, 92, 32
     p = [f'<rect x="{cx - 1.5}" y="{y0}" width="3" height="{passo * (len(est) - 1)}" fill="{t["linha"]}"/>']
     for i, (ic, rot, desc) in enumerate(est):
         cy = y0 + i * passo
         p.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{t["pagina"]}" stroke="{t["linha"]}" stroke-width="2.5"/>')
         p.append(_ic(ic, t, cx - 16, cy - 16, 32))
-        p.append(svg.linha(rot, 96, cy - 3, 16, t["texto"], 800, 0.01))
-        p.append(svg.linha(desc, 96, cy + 19, 14, t["suave"], 400))
+        p.append(svg.linha(rot, 78, cy - 3, 16, t["texto"], 800, 0.01))
+        p.append(svg.linha(desc, 78, cy + 19, 14, t["suave"], 400))
     p.append(f'<circle class="anel" cx="{cx}" cy="{y0}" r="{r + 2}" fill="none" stroke="{t["destaque"]}" stroke-width="4.5"/>')
-    for j, l in enumerate(svg.quebrar(COPY["esteira_rodape"], 14, L - 48, 800, 0.03)):
-        p.append(svg.linha(l, 24, A - 40 + j * 20, 14, t["texto"], 800, 0.03))
-    css = _passo_css("anel", "Y", passo, len(est), 11)
-    return idt.svg_aberto(L, A, "Onde a automação entra: briefing e abertura, planejamento, pré-produção, "
-                                "produção e fechamento. O trabalho humano permanece no centro.", css, "".join(p), tema, 16)
+    y = y0 + passo * (len(est) - 1) + r + 34
+    linhas = svg.quebrar(COPY["esteira_rodape"], 14, 360, 800, 0.03)
+    for j, l in enumerate(linhas):
+        p.append(svg.linha(l, 0, y + j * 20, 14, t["texto"], 800, 0.03))
+    return "".join(p), y + (len(linhas) - 1) * 20 + 4, _passo_css("anel", "Y", passo, len(est), 11)
 
-
-# ---------- 02. anatomia ----------
 
 CICLO = ("@keyframes ciclo{0%{opacity:0}4%{opacity:1}30%{opacity:1}34%{opacity:0}100%{opacity:0}}"
          ".ex{animation:ciclo 12s infinite both}.ex1{animation-delay:4s;opacity:0}.ex2{animation-delay:8s;opacity:0}"
          "@keyframes flui{to{stroke-dashoffset:-20}}.flui{animation:flui 1s linear infinite}")
 
 
-def _exemplos_coluna(col, t, cx, y_ic, y_txt, tam_ic, tam_txt, larg_txt, ancora="meio"):
+def _exemplos(col, t, cx, y_ic, y_txt, tam_ic, tam_txt, larg_txt, meio=True):
     out = []
     for k, ex in enumerate(COPY["anatomia"]["exemplos"]):
         ic, rot = ex[col]
-        partes = _ic(ic, t, cx - tam_ic / 2 if ancora == "meio" else cx, y_ic, tam_ic)
+        partes = _ic(ic, t, cx - tam_ic / 2 if meio else cx, y_ic, tam_ic)
         for j, l in enumerate(svg.quebrar(rot, tam_txt, larg_txt, 700, 0.01)):
-            partes += svg.linha(l, cx if ancora == "meio" else cx + tam_ic + 16, y_txt + j * (tam_txt + 5),
-                                tam_txt, t["texto"], 700, 0.01, ancora=ancora if ancora == "meio" else "inicio")
+            partes += svg.linha(l, cx if meio else cx + tam_ic + 16, y_txt + j * (tam_txt + 5),
+                                tam_txt, t["texto"], 700, 0.01, ancora="meio" if meio else "inicio")
         out.append(f'<g class="ex ex{k}">{partes}</g>')
     return "".join(out)
 
 
-def anatomia(tema):
-    t = idt.TEMA[tema]
-    L, A, gap, y_card, h_card = 830, 236, 34, 46, 168
-    larg = (L - 3 * gap - 4) / 4  # 2 px de folga em cada borda para o traço não ser cortado
+def _anatomia_desk(t):
+    W, gap, y_card, h_card = 830, 34, 30, 168
+    larg = (W - 3 * gap - 4) / 4
     etapas = COPY["anatomia"]["etapas"]
     p = []
     for i, etapa in enumerate(etapas):
         x = 2 + i * (larg + gap)
         cx = x + larg / 2
-        p.append(svg.linha(f"0{i + 1}", x, 28, 14, t["destaque"], 900, 0))
-        p.append(svg.linha(etapa, x + 30, 28, svg.caber(etapa, 14, larg - 30, 800, 0.01), t["texto"], 800, 0.01))
+        p.append(svg.linha(f"0{i + 1}", x, 14, 14, t["destaque"], 900, 0))
+        p.append(svg.linha(etapa, x + 30, 14, svg.caber(etapa, 14, larg - 30, 800, 0.01), t["texto"], 800, 0.01))
         p.append(f'<rect x="{x}" y="{y_card}" width="{larg}" height="{h_card}" rx="14" fill="{t["pagina"]}" '
                  f'stroke="{t["destaque"] if i == 3 else t["linha"]}" stroke-width="{3 if i == 3 else 2}"/>')
         if i < 3:
-            p.append(_exemplos_coluna(i, t, cx, y_card + 34, y_card + 124, 56, 13.5, larg - 24))
-            x1, x2 = x + larg + 4, x + larg + gap - 4
+            p.append(_exemplos(i, t, cx, y_card + 34, y_card + 124, 56, 13.5, larg - 24))
             yc = y_card + h_card / 2
-            p.append(f'<path class="flui" d="M{x1} {yc}H{x2}" stroke="{t["destaque"]}" stroke-width="3" '
-                     f'stroke-dasharray="6 4" fill="none"/>')
+            p.append(f'<path class="flui" d="M{x + larg + 4} {yc}H{x + larg + gap - 4}" stroke="{t["destaque"]}" '
+                     f'stroke-width="3" stroke-dasharray="6 4" fill="none"/>')
         else:
             ic, rot = COPY["anatomia"]["validacao"]
             p.append(_ic(ic, t, cx - 28, y_card + 34, 56))
             for j, l in enumerate(svg.quebrar(rot, 13.5, larg - 24, 700, 0.01)):
                 p.append(svg.linha(l, cx, y_card + 124 + j * 18.5, 13.5, t["texto"], 700, 0.01, ancora="meio"))
-    return idt.svg_aberto(L, A, "Anatomia de uma automação: entrada, processamento, saída e validação humana.",
-                          CICLO, "".join(p), tema, 24)
+    return "".join(p), y_card + h_card + 2, CICLO
 
 
-def anatomia_celular(tema):
-    t = idt.TEMA[tema]
+def _anatomia_cel(t):
     etapas = COPY["anatomia"]["etapas"]
-    L, h, gap, x = 360, 100, 30, 0
-    A = len(etapas) * h + (len(etapas) - 1) * gap + 4
+    W, h, gap = 360, 100, 30
     p = []
     for i, etapa in enumerate(etapas):
         y = 2 + i * (h + gap)
-        p.append(f'<rect x="1" y="{y}" width="{L - 2}" height="{h}" rx="14" fill="{t["pagina"]}" '
+        p.append(f'<rect x="1" y="{y}" width="{W - 2}" height="{h}" rx="14" fill="{t["pagina"]}" '
                  f'stroke="{t["destaque"] if i == 3 else t["linha"]}" stroke-width="{3 if i == 3 else 2}"/>')
-        p.append(svg.linha(f"0{i + 1}", 20, y + 30, 14, t["destaque"], 900, 0))
-        p.append(svg.linha(etapa, 50, y + 30, 14, t["texto"], 800, 0.01))
+        p.append(svg.linha(f"0{i + 1}", 18, y + 30, 14, t["destaque"], 900, 0))
+        p.append(svg.linha(etapa, 48, y + 30, 14, t["texto"], 800, 0.01))
         if i < 3:
-            p.append(_exemplos_coluna(i, t, 20, y + 46, y + 74, 40, 15, 260, ancora="inicio"))
-            p.append(f'<path class="flui" d="M{L / 2} {y + h + 4}V{y + h + gap - 4}" stroke="{t["destaque"]}" '
+            p.append(_exemplos(i, t, 18, y + 46, y + 74, 40, 15, 260, meio=False))
+            p.append(f'<path class="flui" d="M{W / 2} {y + h + 4}V{y + h + gap - 4}" stroke="{t["destaque"]}" '
                      f'stroke-width="3" stroke-dasharray="6 4" fill="none"/>')
         else:
             ic, rot = COPY["anatomia"]["validacao"]
-            p.append(_ic(ic, t, 20, y + 46, 40))
-            p.append(svg.linha(rot, 76, y + 74, 15, t["texto"], 700, 0.01))
-    return idt.svg_aberto(L, A, "Anatomia de uma automação: entrada, processamento, saída e validação humana.",
-                          CICLO, "".join(p), tema, 16)
+            p.append(_ic(ic, t, 18, y + 46, 40))
+            p.append(svg.linha(rot, 74, y + 74, 15, t["texto"], 700, 0.01))
+    return "".join(p), len(etapas) * h + (len(etapas) - 1) * gap + 4, CICLO
 
 
-# ---------- 03. do pedido à produção ----------
+def _pacote_css(eixo, dist):
+    return (f"@keyframes pacote{{0%{{transform:translate{eixo}(0);opacity:0}}6%{{opacity:1}}"
+            f"90%{{opacity:1}}100%{{transform:translate{eixo}({dist:.0f}px);opacity:0}}}}"
+            ".pacote{animation:pacote 5s cubic-bezier(.45,0,.55,1) infinite}")
 
-def arquitetura(tema):
-    t = idt.TEMA[tema]
+
+def _arquitetura_desk(t):
     nos = COPY["arquitetura"]
-    L, A, cy, s = 830, 236, 60, 76
-    passo = (L - 166) / (len(nos) - 1)
+    W, cy, s = 830, 40, 76
+    passo = (W - 166) / (len(nos) - 1)
     xs = [83 + i * passo for i in range(len(nos))]
     p = [f'<rect x="{xs[0]}" y="{cy - 1.5}" width="{xs[-1] - xs[0]}" height="3" fill="{t["linha"]}"/>',
          f'<rect class="pacote" x="{xs[0] - 9}" y="{cy - 6}" width="18" height="12" rx="4" fill="{t["destaque"]}"/>']
@@ -296,20 +269,14 @@ def arquitetura(tema):
         p.append(_ic(ic, t, x - 18, cy - 18, 36))
         p.append(svg.linha(rot, x, cy + s / 2 + 30, 15, t["texto"], 800, 0.01, ancora="meio"))
         p.append(svg.linha(desc, x, cy + s / 2 + 52, 13.5, t["suave"], 400, 0, ancora="meio"))
-    p.append(svg.linha(COPY["arquitetura_rodape"], L / 2, A - 14, 13.5, t["texto"], 800, 0.04, ancora="meio"))
-    dist = xs[-1] - xs[0]
-    css = (f"@keyframes pacote{{0%{{transform:translateX(0);opacity:0}}6%{{opacity:1}}"
-           f"90%{{opacity:1}}100%{{transform:translateX({dist:.0f}px);opacity:0}}}}"
-           ".pacote{animation:pacote 5s cubic-bezier(.45,0,.55,1) infinite}")
-    return idt.svg_aberto(L, A, "Do pedido à produção: pedido, código, esteira, produção e versão. "
-                                "Tudo versionado; nada publica sem aprovação.", css, "".join(p), tema, 24)
+    A = 186
+    p.append(svg.linha(COPY["arquitetura_rodape"], 0, A, 13.5, t["texto"], 800, 0.04))
+    return "".join(p), A + 4, _pacote_css("X", xs[-1] - xs[0])
 
 
-def arquitetura_celular(tema):
-    t = idt.TEMA[tema]
+def _arquitetura_cel(t):
     nos = COPY["arquitetura"]
-    L, cx, s, passo, y0 = 360, 48, 60, 90, 40
-    A = y0 + passo * (len(nos) - 1) + 96
+    cx, s, passo, y0 = 30, 60, 90, 32
     p = [f'<rect x="{cx - 1.5}" y="{y0}" width="3" height="{passo * (len(nos) - 1)}" fill="{t["linha"]}"/>',
          f'<rect class="pacote" x="{cx - 6}" y="{y0 - 9}" width="12" height="18" rx="4" fill="{t["destaque"]}"/>']
     for i, (ic, rot, desc) in enumerate(nos):
@@ -317,93 +284,88 @@ def arquitetura_celular(tema):
         p.append(f'<rect x="{cx - s / 2}" y="{cy - s / 2}" width="{s}" height="{s}" rx="14" fill="{t["pagina"]}" '
                  f'stroke="{t["linha"]}" stroke-width="2.5"/>')
         p.append(_ic(ic, t, cx - 15, cy - 15, 30))
-        p.append(svg.linha(rot, 96, cy - 3, 16, t["texto"], 800, 0.01))
-        p.append(svg.linha(desc, 96, cy + 19, 14, t["suave"], 400))
-    for j, l in enumerate(svg.quebrar(COPY["arquitetura_rodape"], 14, L - 48, 800, 0.03)):
-        p.append(svg.linha(l, 24, A - 40 + j * 20, 14, t["texto"], 800, 0.03))
-    dist = passo * (len(nos) - 1)
-    css = (f"@keyframes pacote{{0%{{transform:translateY(0);opacity:0}}6%{{opacity:1}}"
-           f"90%{{opacity:1}}100%{{transform:translateY({dist:.0f}px);opacity:0}}}}"
-           ".pacote{animation:pacote 5s cubic-bezier(.45,0,.55,1) infinite}")
-    return idt.svg_aberto(L, A, "Do pedido à produção: pedido, código, esteira, produção e versão. "
-                                "Tudo versionado; nada publica sem aprovação.", css, "".join(p), tema, 16)
+        p.append(svg.linha(rot, 78, cy - 3, 16, t["texto"], 800, 0.01))
+        p.append(svg.linha(desc, 78, cy + 19, 14, t["suave"], 400))
+    y = y0 + passo * (len(nos) - 1) + s / 2 + 34
+    linhas = svg.quebrar(COPY["arquitetura_rodape"], 14, 360, 800, 0.03)
+    for j, l in enumerate(linhas):
+        p.append(svg.linha(l, 0, y + j * 20, 14, t["texto"], 800, 0.03))
+    return "".join(p), y + (len(linhas) - 1) * 20 + 4, _pacote_css("Y", passo * (len(nos) - 1))
 
 
-# ---------- 04. princípios e 05. ferramentas ----------
-
-def _blocos(itens, t, L, colunas, larg_cel, alt_cel, tam_ic, tam_txt, desenha):
-    p = []
-    for i, it in enumerate(itens):
-        col, lin = i % colunas, i // colunas
-        cx = col * larg_cel + larg_cel / 2
-        y = lin * alt_cel
-        p.append(desenha(it, t, cx, y, tam_ic, tam_txt))
-    return "".join(p)
+def _grade(itens, colunas, larg_cel, alt_cel, desenha, t, tam_ic, tam_txt):
+    return "".join(desenha(it, t, (i % colunas) * larg_cel + larg_cel / 2, (i // colunas) * alt_cel, tam_ic, tam_txt)
+                   for i, it in enumerate(itens))
 
 
 def _principio(it, t, cx, y, tam_ic, tam_txt):
     ic, linhas = it
-    out = _ic(ic, t, cx - tam_ic / 2, y + 8, tam_ic)
+    out = _ic(ic, t, cx - tam_ic / 2, y, tam_ic)
     for j, l in enumerate(linhas):
-        out += svg.linha(l, cx, y + tam_ic + 40 + j * (tam_txt + 5), tam_txt, t["texto"], 800, 0.01, ancora="meio")
+        out += svg.linha(l, cx, y + tam_ic + 32 + j * (tam_txt + 5), tam_txt, t["texto"], 800, 0.01, ancora="meio")
     return out
-
-
-def principios(tema):
-    t = idt.TEMA[tema]
-    itens = COPY["principios"]
-    corpo = _blocos(itens, t, 830, 4, 830 / 4, 0, 52, 17, _principio)
-    return idt.svg_aberto(830, 148, "Princípios: gente no centro, dado não achismo, versão e backup, passos curtos.",
-                          "", corpo, tema, 24)
-
-
-def principios_celular(tema):
-    t = idt.TEMA[tema]
-    corpo = _blocos(COPY["principios"], t, 360, 2, 180, 150, 46, 17, _principio)
-    return idt.svg_aberto(360, 290, "Princípios: gente no centro, dado não achismo, versão e backup, passos curtos.",
-                          "", corpo, tema, 16)
 
 
 def _ferramenta(it, t, cx, y, tam_ic, tam_txt):
     nome, rot = it
-    out = idt.simple_icon(nome, t["texto"], cx - tam_ic / 2, y + 6, tam_ic)
-    linhas = svg.quebrar(rot, tam_txt, 120, 700, 0.03)
-    for j, l in enumerate(linhas):
-        out += svg.linha(l, cx, y + tam_ic + 30 + j * (tam_txt + 4), tam_txt, t["suave"], 700, 0.03, ancora="meio")
+    out = idt.simple_icon(nome, t["texto"], cx - tam_ic / 2, y, tam_ic)
+    for j, l in enumerate(svg.quebrar(rot, tam_txt, 120, 700, 0.03)):
+        out += svg.linha(l, cx, y + tam_ic + 26 + j * (tam_txt + 4), tam_txt, t["suave"], 700, 0.03, ancora="meio")
     return out
 
 
-def stack(tema):
-    t = idt.TEMA[tema]
-    corpo = _blocos(COPY["stack"], t, 830, 6, 830 / 6, 0, 36, 12, _ferramenta)
-    return idt.svg_aberto(830, 104, "Ferramentas: n8n, Python, Supabase, Google Workspace, GitHub Actions e Claude.",
-                          "", corpo, tema, 24)
+def _principios_desk(t):
+    return _grade(COPY["principios"], 4, 830 / 4, 0, _principio, t, 52, 17), 128, ""
 
 
-def stack_celular(tema):
-    t = idt.TEMA[tema]
-    corpo = _blocos(COPY["stack"], t, 360, 3, 120, 100, 34, 12, _ferramenta)
-    return idt.svg_aberto(360, 196, "Ferramentas: n8n, Python, Supabase, Google Workspace, GitHub Actions e Claude.",
-                          "", corpo, tema, 16)
+def _principios_cel(t):
+    return _grade(COPY["principios"], 2, 180, 140, _principio, t, 46, 17), 260, ""
 
 
-PECAS = {
-    "hero": hero, "hero-celular": hero_celular,
-    "esteira": esteira, "esteira-celular": esteira_celular,
-    "anatomia": anatomia, "anatomia-celular": anatomia_celular,
-    "arquitetura": arquitetura, "arquitetura-celular": arquitetura_celular,
-    "principios": principios, "principios-celular": principios_celular,
-    "stack": stack, "stack-celular": stack_celular,
-    "fechamento": fechamento, "fechamento-celular": fechamento_celular,
+def _stack_desk(t):
+    return _grade(COPY["stack"], 6, 830 / 6, 0, _ferramenta, t, 36, 12), 92, ""
+
+
+def _stack_cel(t):
+    return _grade(COPY["stack"], 3, 120, 96, _ferramenta, t, 34, 12), 186, ""
+
+
+ALT = {
+    "esteira": "Onde a automação entra: briefing e abertura, planejamento, pré-produção, produção e fechamento. "
+               "O trabalho humano permanece no centro.",
+    "anatomia": "Anatomia de uma automação: entrada, processamento, saída e validação humana.",
+    "arquitetura": "Do pedido à produção: pedido, código, esteira, produção e versão. "
+                   "Tudo versionado; nada publica sem aprovação.",
+    "principios": "Princípios: gente no centro, dado não achismo, versão e backup, passos curtos.",
+    "stack": "Ferramentas: n8n, Python, Supabase, Google Workspace, GitHub Actions e Claude.",
 }
+CORPOS = {"esteira": (_esteira_desk, _esteira_cel), "anatomia": (_anatomia_desk, _anatomia_cel),
+          "arquitetura": (_arquitetura_desk, _arquitetura_cel), "principios": (_principios_desk, _principios_cel),
+          "stack": (_stack_desk, _stack_cel)}
+
+
+def secao(chave, modo):
+    def gerar(tema):
+        t = idt.TEMA[tema]
+        fn = CORPOS[chave][0 if modo == "desk" else 1]
+        corpo, A, css = fn(t)
+        num, titulo, sub = COPY["secoes"][chave]
+        return blc.bloco(tema, modo, f"{num} {titulo.capitalize()}. {ALT[chave]}", corpo, A, css,
+                         cab=(num, titulo, sub))
+    return gerar
+
+
+PECAS = {"hero": hero, "hero-celular": hero_celular,
+         "fechamento": fechamento, "fechamento-celular": fechamento_celular}
+for _c in CORPOS:
+    PECAS[_c] = secao(_c, "desk")
+    PECAS[f"{_c}-celular"] = secao(_c, "cel")
 
 
 def gerar_todas(pasta: Path) -> list:
     saida = []
     for nome, fn in PECAS.items():
         saida += svg.salvar(nome, fn, pasta)
-    for chave in COPY["secoes"]:
-        saida += svg.salvar(chave, secao(chave), pasta)
     return saida
 
 
